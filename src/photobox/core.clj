@@ -1,96 +1,50 @@
 (ns photobox.core
-  (:require [clojure.pprint :refer (pprint)]
-            [clojure.set :as set]
-            [exif-processor.core :as processor]))
+  (:require [clojure.core.async :as async :refer (<! >! <!! chan go go-loop mult onto-chan pipe tap thread)]
+            [clojure.string :as string]
+            [clojure.pprint :refer (pprint)]
+            [me.raynes.fs :as fs]
+            [photobox.exif :as exif]))
 
-(def test-file "/Volumes/Untitled/DCIM/103_FUJI/DSCF3788.JPG")
-(def interesting-tags #{"Date/Time"
-                        "Development Dynamic Range"
-                        "Dynamic Range"
-                        "Dynamic Range Setting"
-                        "Exposure Count"
-                        "Exposure Mode"
-                        "Exposure Program"
-                        "Exposure Time"
-                        "F-Number"
-                        "Focal Length"
-                        "Focus Mode"
-                        "Highlight Tone"
-                        "ISO Speed Ratings"
-                        "Image Count"
-                        "Image Generation"
-                        "Lens Make"
-                        "Lens Model"
-                        "Make"
-                        "Model"
-                        "Rating"
-                        "Saturation"
-                        "Sequence Number"
-                        "Shadow Tone"
-                        "Shutter Speed Value"
-                        "Shutter Type"
-                        "Software"})
+(def good-photo-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
+(def great-photo-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
+(def jpeg-pattern "/Volumes/Untitled/DCIM/103_FUJI/*.JPG")
+(def jpeg-files (fs/glob jpeg-pattern))
 
-(def postprocessors
-  {0x1022 {:name "AF Mode"
-           :value {"0" "No"
-                   "1" "Single Point"
-                   "256" "Zone"
-                   "512" "Wide/Tracking"}}
-   0x1032 {:name "Exposure Count"
-           :value #(Integer/parseInt %)}
-   0x1040 {:name "Shadow Tone"
-           :value #(-> % Integer/parseInt - (/ 4))}
-   0x1041 {:name "Highlight Tone"
-           :value #(-> % Integer/parseInt - (/ 4))}
-   0x1050 {:name "Shutter Type"
-           :value {"0" "Mechanical", "1" "Electronic"}}
-   0x1431 {:name "Rating"
-           :value #(Integer/parseInt %)}
-   0x1436 {:name "Image Generation"
-           :value {"0" "Original Image"
-                   "1" "Re-developed from RAW"}}
-   0x1438 {:name "Image Count"
-           :value #(Integer/parseInt %)}})
+(defn is-good-photo [photo-data] 
+  (> ((photo-data :exif-data) "Rating") 3))
+(defn is-great-photo [photo-data]
+  (= ((photo-data :exif-data) "Rating") 5))
 
-(defn- unknown-tag-number [tag-name]
-  "Parses the numerical component of auto-generated unknown tag names."
-  (if-let [matches (re-matches #"Unknown tag \(0x([0-9a-f]+)\)" tag-name)]
-    (Integer/parseInt (nth matches 1) 16)))
+(defn process-good-photo [photo-data]
+  (do
+    (let [src-file (photo-data :path)
+          dest-file (string/join "/" [good-photo-destination-dir (fs/base-name src-file)])]
+      (fs/copy src-file dest-file))))
+(defn process-great-photo [photo-data]
+  (do 
+    (let [src-file (photo-data :path)
+          dest-file (string/join "/" [great-photo-destination-dir (fs/base-name src-file)])]
+      (fs/copy src-file dest-file))))
 
-(defn- postprocess [data]
-  "Supplements exif-processor's data with extra stuff we know how to interpret."
-  (letfn [(postprocess-single [[tag value]]
-            (let [number (unknown-tag-number tag)
-                  postprocessor (if number (postprocessors number))]
-              (if postprocessor
-                {(:name postprocessor) ((:value postprocessor) value)}
-                {tag value})))]
-    (apply merge (map postprocess-single data))))
+(defn info-for-file [file]
+  (let [exif-data (exif/interesting-data-for-file file)
+        file-path (.getAbsolutePath file)]
+    {:path file-path
+     :exif-data exif-data}))
 
-(def exif-for-filename
-  "Same as exif-processor.core/exif-for-filename, but with our very specific postprocessing."
-  (comp postprocess processor/exif-for-filename))
-
-(def available-tags-for-filename
-  "Lists Exif data keys available in a file."
-  (comp keys exif-for-filename))
-
-(defn interesting-data [data]
-  "Returns the interesting stuff from extracted Exif data."
-  (select-keys data interesting-tags))
-
-(defn missing-tags [data]
-  "Lists Exif data keys that we're interested in but don't have in the given data."
-  (set/difference interesting-tags (set (keys data))))
-
-(defn unknown-data [data]
-  "Returns the unknown stuff from extracted Exif data."
-  (filter (fn [[tag _]] (unknown-tag-number tag)) data))
-
-(def interesting-data-for-filename
-  (comp interesting-data exif-for-filename))
-(def missing-tags-for-filename
-  (comp missing-tags exif-for-filename))
-(def unknown-data-for-filename
-  (comp unknown-data exif-for-filename))
+(defn do-things []
+  (let [photo-data (chan 20 (map info-for-file))
+        good-photos (chan 20 (filter is-good-photo))
+        great-photos (chan 20 (filter is-great-photo))
+        photo-data-mult (mult photo-data)]
+    (tap photo-data-mult good-photos)
+    (tap photo-data-mult great-photos)
+    (go-loop []
+             (if-let [photo (<! good-photos)]
+               (do (process-good-photo photo)
+                   (recur))))
+    (go-loop []
+      (if-let [photo (<!! great-photos)]
+        (do (process-great-photo photo)
+            (recur))))
+    (onto-chan photo-data jpeg-files)))
