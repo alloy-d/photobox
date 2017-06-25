@@ -32,31 +32,31 @@
                         "Software"})
 
 (def postprocessors
-  {"0x1022" {:name "AF Mode"
-             :value {"0" "No"
-                     "1" "Single Point"
-                     "256" "Zone"
-                     "512" "Wide/Tracking"}}
-   "0x1032" {:name "Exposure Count"
-             :value #(Integer/parseInt %)}
-   "0x1040" {:name "Shadow Tone"
-             :value #(-> % Integer/parseInt - (/ 4))}
-   "0x1041" {:name "Highlight Tone"
-             :value #(-> % Integer/parseInt - (/ 4))}
-   "0x1050" {:name "Shutter Type"
-             :value {"0" "Mechanical", "1" "Electronic"}}
-   "0x1431" {:name "Rating"
-             :value #(Integer/parseInt %)}
-   "0x1436" {:name "Image Generation"
-             :value {"0" "Original Image"
-                     "1" "Re-developed from RAW"}}
-   "0x1438" {:name "Image Count"
-             :value #(Integer/parseInt %)}})
+  {0x1022 {:name "AF Mode"
+           :value {"0" "No"
+                   "1" "Single Point"
+                   "256" "Zone"
+                   "512" "Wide/Tracking"}}
+   0x1032 {:name "Exposure Count"
+           :value #(Integer/parseInt %)}
+   0x1040 {:name "Shadow Tone"
+           :value #(-> % Integer/parseInt - (/ 4))}
+   0x1041 {:name "Highlight Tone"
+           :value #(-> % Integer/parseInt - (/ 4))}
+   0x1050 {:name "Shutter Type"
+           :value {"0" "Mechanical", "1" "Electronic"}}
+   0x1431 {:name "Rating"
+           :value #(Integer/parseInt %)}
+   0x1436 {:name "Image Generation"
+           :value {"0" "Original Image"
+                   "1" "Re-developed from RAW"}}
+   0x1438 {:name "Image Count"
+           :value #(Integer/parseInt %)}})
 
 (defn- unknown-tag-number [tag-name]
   "Parses the numerical component of auto-generated unknown tag names."
-  (if-let [matches (re-matches #"Unknown tag \((0x[0-9a-f]+)\)" tag-name)]
-    (nth matches 1)))
+  (if-let [matches (re-matches #"Unknown tag \(0x([0-9a-f]+)\)" tag-name)]
+    (Integer/parseInt (nth matches 1) 16)))
 
 (defn- postprocess [data]
   "Supplements exif-processor's data with extra stuff we know how to interpret."
