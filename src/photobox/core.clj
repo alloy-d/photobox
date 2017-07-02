@@ -28,6 +28,14 @@
       (if (not (fs/exists? dest-file))
         (fs/copy src-file dest-file)))))
 
+(def processors
+  [{:name "copy good photos"
+    :preparation (filter is-good-photo)
+    :action process-good-photo}
+   {:name "copy great photos"
+    :preparation (filter is-great-photo)
+    :action process-great-photo}])
+
 (defn info-for-file [file]
   (let [exif-data (exif/interesting-data-for-file file)
         file-path (.getAbsolutePath file)]
@@ -46,13 +54,11 @@
   (let [photo-data (chan 20 (map info-for-file))
         great-photos (chan 20 (filter is-great-photo))
         photo-data-mult (mult photo-data)
-        good-photo-processor (let [good-photos (chan 20 (filter is-good-photo))]
-                               (tap photo-data-mult good-photos)
-                               (run-async process-good-photo good-photos))
-        great-photo-processor (let [great-photos (chan 20 (filter is-great-photo))]
-                                (tap photo-data-mult great-photos)
-                                (run-async process-great-photo great-photos))]
+        running-processors (map (fn [processor]
+                                  (let [input (chan 20 (processor :preparation))]
+                                    (tap photo-data-mult input)
+                                    (run-async (processor :action) input)))
+                                processors)]
     (onto-chan photo-data jpeg-files)
-    (<!! good-photo-processor)
-    (<!! great-photo-processor)
+    (doseq [proc running-processors] (<!! proc))
     "all done"))
