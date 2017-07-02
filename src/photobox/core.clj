@@ -5,12 +5,13 @@
             [clojure.string :as string]
             [clojure.pprint :refer (pprint)]
             [me.raynes.fs :as fs]
-            [photobox.exif :as exif]))
+            [photobox.exif :as exif]
+            [photobox.fs :refer (find-photos sort-by-extension)]))
 
 (def good-photo-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
 (def great-photo-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
-(def jpeg-pattern "/Volumes/Untitled/DCIM/103_FUJI/*.JPG")
-(def jpeg-files (fs/glob jpeg-pattern))
+(def photo-source "/Volumes/Untitled")
+(def photo-files (sort-by-extension (find-photos photo-source)))
 
 (defn- copy-to-directory [directory src-file]
   (let [dest-file (string/join "/" [directory (fs/base-name src-file)])]
@@ -69,6 +70,6 @@
                                     (tap photo-data-mult input)
                                     (run-async #(act processor %) input)))
                                 processors)]
-    (onto-chan photo-data jpeg-files)
+    (onto-chan photo-data photo-files)
     (doseq [proc running-processors] (<!! proc))
     "all done"))
