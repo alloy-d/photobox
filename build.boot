@@ -14,6 +14,7 @@
   :dependencies '[[org.clojure/clojure "1.8.0"]
                   [org.clojure/core.async "0.3.443"]
                   [org.clojure/test.check "0.9.0" :scope "test"]
+                  [adzerk/boot-test "1.2.0" :scope "test"]
                   [io.joshmiller/exif-processor "0.2.0"]
                   [it.frbracch/boot-marginalia "0.1.3-1" :scope "test"]
                   [me.raynes/fs "1.4.6"]
@@ -22,9 +23,9 @@
 
 (deftask run-tests []
   (set-env! :source-paths #(conj % "test"))
-  (require 'clojure.test 'photobox.fs-test)
-  (let [run-tests (resolve 'clojure.test/run-tests)]
-    (run-tests 'photobox.fs-test)))
+  (require 'adzerk.boot-test)
+  (let [test (resolve 'adzerk.boot-test/test)]
+    (test)))
 
 (deftask check-sources []
   (require 'tolitius.boot-check)
