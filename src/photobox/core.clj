@@ -34,19 +34,25 @@
     {:path file-path
      :exif-data exif-data}))
 
+(defn- run-async [processor channel]
+  "In a (go ...) block, runs `processor` for each entry in `channel`.
+  Finishes when `channel` becomes empty."
+  (go-loop []
+           (if-let [entry (<! channel)]
+             (do (processor entry)
+                 (recur)))))
+
 (defn do-things []
   (let [photo-data (chan 20 (map info-for-file))
-        good-photos (chan 20 (filter is-good-photo))
         great-photos (chan 20 (filter is-great-photo))
-        photo-data-mult (mult photo-data)]
-    (tap photo-data-mult good-photos)
-    (tap photo-data-mult great-photos)
-    (go-loop []
-             (if-let [photo (<! good-photos)]
-               (do (process-good-photo photo)
-                   (recur))))
-    (go-loop []
-      (if-let [photo (<!! great-photos)]
-        (do (process-great-photo photo)
-            (recur))))
-    (onto-chan photo-data jpeg-files)))
+        photo-data-mult (mult photo-data)
+        good-photo-processor (let [good-photos (chan 20 (filter is-good-photo))]
+                               (tap photo-data-mult good-photos)
+                               (run-async process-good-photo good-photos))
+        great-photo-processor (let [great-photos (chan 20 (filter is-great-photo))]
+                                (tap photo-data-mult great-photos)
+                                (run-async process-great-photo great-photos))]
+    (onto-chan photo-data jpeg-files)
+    (<!! good-photo-processor)
+    (<!! great-photo-processor)
+    "all done"))
