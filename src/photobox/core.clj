@@ -1,9 +1,7 @@
 (ns photobox.core
   (:require [clojure.core.async :as async
-                                :refer (<! >! <!!
-                                           chan onto-chan
-                                           go go-loop
-                                           mult tap pipe)]
+             :refer (<! >! <!! go go-loop chan
+                        onto-chan mult tap pipe)]
             [clojure.string :as string]
             [clojure.pprint :refer (pprint)]
             [me.raynes.fs :as fs]
@@ -55,7 +53,7 @@
      :exif-data exif-data}))
 
 (defn- run-async
-  "In a (go ...) block, runs `processor` for each entry in `channel`.
+  "In a `(go ...)` block, runs `processor` for each entry in `channel`.
   Finishes when `channel` becomes empty."
   [processor channel]
   (go-loop []
