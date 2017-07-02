@@ -10,31 +10,34 @@
 (def jpeg-pattern "/Volumes/Untitled/DCIM/103_FUJI/*.JPG")
 (def jpeg-files (fs/glob jpeg-pattern))
 
-(defn is-good-photo [photo-data] 
-  (> ((photo-data :exif-data) "Rating") 3))
-(defn is-great-photo [photo-data]
-  (= ((photo-data :exif-data) "Rating") 5))
+(defn- copy-to-directory [directory src-file]
+  (let [dest-file (string/join "/" [directory (fs/base-name src-file)])]
+    (if (not (fs/exists? dest-file))
+      (fs/copy src-file dest-file))))
 
-(defn process-good-photo [photo-data]
-  (do
-    (let [src-file (photo-data :path)
-          dest-file (string/join "/" [good-photo-destination-dir (fs/base-name src-file)])]
-      (if (not (fs/exists? dest-file))
-        (fs/copy src-file dest-file)))))
-(defn process-great-photo [photo-data]
-  (do 
-    (let [src-file (photo-data :path)
-          dest-file (string/join "/" [great-photo-destination-dir (fs/base-name src-file)])]
-      (if (not (fs/exists? dest-file))
-        (fs/copy src-file dest-file)))))
+(defprotocol PProcessor
+  "A thing that prepares and then acts on items."
 
-(def processors
-  [{:name "copy good photos"
-    :preparation (filter is-good-photo)
-    :action process-good-photo}
-   {:name "copy great photos"
-    :preparation (filter is-great-photo)
-    :action process-great-photo}])
+  (prepare [this] "Returns a transducer that prepares data in the pipeline for action.")
+  (act [this data] "Take data transduced by `prepare`, and act on it."))
+
+(defrecord GoodPhotoProcessor []
+  PProcessor
+  (prepare [_]
+    (filter (fn [photo-data]
+              (> ((photo-data :exif-data) "Rating") 3))))
+  (act [_ photo-data]
+    (copy-to-directory good-photo-destination-dir (photo-data :path))))
+
+(defrecord GreatPhotoProcessor []
+  PProcessor
+  (prepare [_]
+    (filter (fn [photo-data]
+              (= ((photo-data :exif-data) "Rating") 5))))
+  (act [_ photo-data]
+    (copy-to-directory great-photo-destination-dir (photo-data :path))))
+
+(def processors [(GoodPhotoProcessor.) (GreatPhotoProcessor.)])
 
 (defn info-for-file [file]
   (let [exif-data (exif/interesting-data-for-file file)
@@ -52,12 +55,11 @@
 
 (defn do-things []
   (let [photo-data (chan 20 (map info-for-file))
-        great-photos (chan 20 (filter is-great-photo))
         photo-data-mult (mult photo-data)
         running-processors (map (fn [processor]
-                                  (let [input (chan 20 (processor :preparation))]
+                                  (let [input (chan 20 (prepare processor))]
                                     (tap photo-data-mult input)
-                                    (run-async (processor :action) input)))
+                                    (run-async #(act processor %) input)))
                                 processors)]
     (onto-chan photo-data jpeg-files)
     (doseq [proc running-processors] (<!! proc))
