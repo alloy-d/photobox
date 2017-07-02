@@ -1,4 +1,7 @@
 (ns photobox.exif
+  "Utilities for working with Exif data.
+
+  Includes some hacked-in special processing for files from the Fujifilm X-T2."
   (:require [clojure.set :as set]
             [exif-processor.core :as processor]))
 
