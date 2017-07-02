@@ -19,12 +19,14 @@
   (do
     (let [src-file (photo-data :path)
           dest-file (string/join "/" [good-photo-destination-dir (fs/base-name src-file)])]
-      (fs/copy src-file dest-file))))
+      (if (not (fs/exists? dest-file))
+        (fs/copy src-file dest-file)))))
 (defn process-great-photo [photo-data]
   (do 
     (let [src-file (photo-data :path)
           dest-file (string/join "/" [great-photo-destination-dir (fs/base-name src-file)])]
-      (fs/copy src-file dest-file))))
+      (if (not (fs/exists? dest-file))
+        (fs/copy src-file dest-file)))))
 
 (defn info-for-file [file]
   (let [exif-data (exif/interesting-data-for-file file)
