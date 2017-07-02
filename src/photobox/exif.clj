@@ -51,13 +51,15 @@
    0x1438 {:name "Image Count"
            :value #(Integer/parseInt %)}})
 
-(defn- unknown-tag-number [tag-name]
+(defn- unknown-tag-number
   "Parses the numerical component of auto-generated unknown tag names."
+  [tag-name]
   (if-let [matches (re-matches #"Unknown tag \(0x([0-9a-f]+)\)" tag-name)]
     (Integer/parseInt (nth matches 1) 16)))
 
-(defn- postprocess [data]
+(defn- postprocess
   "Supplements exif-processor's data with extra stuff we know how to interpret."
+  [data]
   (letfn [(postprocess-single [[tag value]]
             (let [number (unknown-tag-number tag)
                   postprocessor (if number (postprocessors number))]
@@ -78,16 +80,19 @@
   "Lists Exif data keys available in a file."
   (comp keys exif-for-filename))
 
-(defn interesting-data [data]
+(defn interesting-data
   "Returns the interesting stuff from extracted Exif data."
+  [data]
   (select-keys data interesting-tags))
 
-(defn missing-tags [data]
+(defn missing-tags
   "Lists Exif data keys that we're interested in but don't have in the given data."
+  [data]
   (set/difference interesting-tags (set (keys data))))
 
-(defn unknown-data [data]
+(defn unknown-data
   "Returns the unknown stuff from extracted Exif data."
+  [data]
   (filter (fn [[tag _]] (unknown-tag-number tag)) data))
 
 (def interesting-data-for-file

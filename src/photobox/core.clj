@@ -1,5 +1,9 @@
 (ns photobox.core
-  (:require [clojure.core.async :as async :refer (<! >! <!! chan go go-loop mult onto-chan pipe tap thread)]
+  (:require [clojure.core.async :as async
+                                :refer (<! >! <!!
+                                           chan onto-chan
+                                           go go-loop
+                                           mult tap pipe)]
             [clojure.string :as string]
             [clojure.pprint :refer (pprint)]
             [me.raynes.fs :as fs]
@@ -18,8 +22,13 @@
 (defprotocol PProcessor
   "A thing that prepares and then acts on items."
 
-  (prepare [this] "Returns a transducer that prepares data in the pipeline for action.")
-  (act [this data] "Take data transduced by `prepare`, and act on it."))
+  (prepare
+    [this]
+    "Returns a transducer that prepares data in the pipeline for action.")
+
+  (act
+    [this data]
+    "Take data transduced by `prepare`, and act on it."))
 
 (defrecord GoodPhotoProcessor []
   PProcessor
@@ -45,9 +54,10 @@
     {:path file-path
      :exif-data exif-data}))
 
-(defn- run-async [processor channel]
+(defn- run-async
   "In a (go ...) block, runs `processor` for each entry in `channel`.
   Finishes when `channel` becomes empty."
+  [processor channel]
   (go-loop []
            (if-let [entry (<! channel)]
              (do (processor entry)
