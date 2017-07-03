@@ -18,34 +18,39 @@
     (if (not (fs/exists? dest-file))
       (fs/copy src-file dest-file))))
 
-(defprotocol PProcessor
-  "A thing that prepares and then acts on items."
+(defn- get-rating [photo-data]
+  ((photo-data :exif-data) "Rating"))
 
-  (prepare
-    [this]
-    "Returns a transducer that prepares data in the pipeline for action.")
+(defn copy
+  "Returns a plan equivalent to `cp src-file dest-file`."
+  [src-file dest-file]
+  {:operation ::copy-file
+   :src-file src-file
+   :dest-file dest-file})
+(defn copy-to-dir
+  "Returns a plan equivalent to `cp src-file dest-dir`."
+  [src-file dest-dir]
+  (let [dest-file (string/join "/" [dest-dir (fs/base-name src-file)])]
+    (copy src-file dest-file)))
 
-  (act
-    [this data]
-    "Take data transduced by `prepare`, and act on it."))
+(def copy-good-photos
+  "Produces a list of operations that will copy good photos
+  (those with `Rating` >= 3) to the good-photo directory."
+  (comp (filter #(> (get-rating %) 3))
+        (map (fn [photo-data]
+               (copy-to-dir (photo-data :path) good-photo-destination-dir)))))
 
-(defrecord GoodPhotoProcessor []
-  PProcessor
-  (prepare [_]
-    (filter (fn [photo-data]
-              (> ((photo-data :exif-data) "Rating") 3))))
-  (act [_ photo-data]
-    (copy-to-directory good-photo-destination-dir (photo-data :path))))
+(defn photocopier
+  "Produces a list of operations that will copy photos produced
+  by `xf` to `dest-dir`."
+  [xf dest-dir]
+  (comp xf
+        (map (fn [photo-data]
+               (copy-to-dir (photo-data :path) dest-dir)))))
 
-(defrecord GreatPhotoProcessor []
-  PProcessor
-  (prepare [_]
-    (filter (fn [photo-data]
-              (= ((photo-data :exif-data) "Rating") 5))))
-  (act [_ photo-data]
-    (copy-to-directory great-photo-destination-dir (photo-data :path))))
-
-(def processors [(GoodPhotoProcessor.) (GreatPhotoProcessor.)])
+(def transductions
+  [copy-good-photos
+   (photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)])
 
 (defn info-for-file [file]
   (let [exif-data (exif/interesting-data-for-file file)
@@ -53,23 +58,8 @@
     {:path file-path
      :exif-data exif-data}))
 
-(defn- run-async
-  "In a `(go ...)` block, runs `processor` for each entry in `channel`.
-  Finishes when `channel` becomes empty."
-  [processor channel]
-  (go-loop []
-           (if-let [entry (<! channel)]
-             (do (processor entry)
-                 (recur)))))
+(defn plan []
+  (let [photo-data (map info-for-file photo-files)
+        results-by-transduction (map #(into [] % photo-data) transductions)]
+    (apply concat results-by-transduction)))
 
-(defn do-things []
-  (let [photo-data (chan 20 (map info-for-file))
-        photo-data-mult (mult photo-data)
-        running-processors (map (fn [processor]
-                                  (let [input (chan 20 (prepare processor))]
-                                    (tap photo-data-mult input)
-                                    (run-async #(act processor %) input)))
-                                processors)]
-    (onto-chan photo-data photo-files)
-    (doseq [proc running-processors] (<!! proc))
-    "all done"))
