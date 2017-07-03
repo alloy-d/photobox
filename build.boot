@@ -15,6 +15,7 @@
                   [org.clojure/core.async "0.3.443"]
                   [org.clojure/test.check "0.9.0" :scope "test"]
                   [adzerk/boot-test "1.2.0" :scope "test"]
+                  [clojure.java-time "0.3.0"]
                   [io.joshmiller/exif-processor "0.2.0"]
                   [it.frbracch/boot-marginalia "0.1.3-1" :scope "test"]
                   [me.raynes/fs "1.4.6"]
