@@ -60,3 +60,14 @@
     (comp
       (notify :visual true :title "Photobox")
       (fn [_] (fn [_] (print-table (plan)))))))
+
+(deftask show-assessed-plan
+  "See what photobox would do with the available photos."
+  []
+  (require 'photobox.core 'photobox.plan 'clojure.pprint)
+  (let [plan (resolve 'photobox.core/plan)
+        assess (resolve 'photobox.plan/assess)
+        print-table (resolve 'clojure.pprint/print-table)]
+    (comp
+      (notify :visual true :title "Photobox")
+      (fn [_] (fn [_] (print-table (map assess (plan))))))))
