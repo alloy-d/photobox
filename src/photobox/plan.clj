@@ -28,3 +28,46 @@
         (map (fn [photo-data]
                (copy-to-dir (photo-data :path) dest-dir)))))
 
+(defn noop
+  "Returns a noop operation for the given `planned` op,
+  with a given `reason`.
+  
+  Should be used when a planned operation would have no effect.
+  If a planned operation *can't* be carried out, then use `impossible`."
+  [planned reason]
+  {:operation ::noop
+   :reason reason
+   :planned planned})
+
+(defn impossible
+  "Returns an impossible operation for the given `planned` op,
+  with a given `reason`.
+  
+  Should be used when an operation can't be carried out,
+  e.g. because a filesystem isn't mounted."
+  [planned reason]
+  {:operation ::impossible
+   :reason reason
+   :planned planned})
+
+(defmulti assess
+  "Checks if an operation makes sense to carry out.
+  
+  Should return an operation that can definitely be done.
+  If an operation can't be done, should return a `::skipped` or
+  `::noop` operation, with a `:reason` and the `:planned`."
+  :operation)
+
+(defmethod assess ::copy-file [op]
+  (cond (fs/exists? (:dest-file op))
+        (noop op "Destination file already exists. Assuming equivalence.")
+        
+        (not (fs/exists? (:src-file op)))
+        (impossible op "Source file does not exist.")
+        
+        (not (fs/directory?
+               (string/join "/" (butlast (fs/split (:dest-file op))))))
+        (impossible
+          op "Destination is not in an existent directory.")
+        
+        :else op))
