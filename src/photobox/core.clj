@@ -13,11 +13,6 @@
 (def photo-source "/Volumes/Untitled")
 (def photo-files (sort-by-extension (find-photos photo-source)))
 
-(defn- copy-to-directory [directory src-file]
-  (let [dest-file (string/join "/" [directory (fs/base-name src-file)])]
-    (if (not (fs/exists? dest-file))
-      (fs/copy src-file dest-file))))
-
 (defn- get-rating [photo-data]
   ((photo-data :exif-data) "Rating"))
 
