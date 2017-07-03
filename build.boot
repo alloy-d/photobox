@@ -51,11 +51,12 @@
         :desc project-description)
       (target))))
 
-(deftask process-photos
-  "Import photos using photobox."
+(deftask show-plan
+  "See what photobox would do with the available photos."
   []
-  (require 'photobox.core)
-  (let [do-things (resolve 'photobox.core/do-things)]
+  (require 'photobox.core 'clojure.pprint)
+  (let [plan (resolve 'photobox.core/plan)
+        print-table (resolve 'clojure.pprint/print-table)]
     (comp
       (notify :visual true :title "Photobox")
-      (fn [_] (fn [_] (do-things))))))
+      (fn [_] (fn [_] (print-table (plan)))))))
