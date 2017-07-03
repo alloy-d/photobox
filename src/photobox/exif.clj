@@ -72,11 +72,11 @@
     (apply merge (map postprocess-single data))))
 
 (def exif-for-filename
-  "Same as exif-processor.core/exif-for-filename, but with our very specific postprocessing."
+  "Same as `exif-processor.core/exif-for-filename`, but with our very specific postprocessing."
   (comp postprocess processor/exif-for-filename))
 
 (def exif-for-file
-  "Same as exif-processor.core/exif-for-filename, but with our very specific postprocessing."
+  "Same as `exif-processor.core/exif-for-file`, but with our very specific postprocessing."
   (comp postprocess processor/exif-for-file))
 
 (def available-tags-for-filename
