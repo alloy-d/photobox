@@ -33,13 +33,6 @@
   (let [dest-file (string/join "/" [dest-dir (fs/base-name src-file)])]
     (copy src-file dest-file)))
 
-(def copy-good-photos
-  "Produces a list of operations that will copy good photos
-  (those with `Rating` >= 3) to the good-photo directory."
-  (comp (filter #(> (get-rating %) 3))
-        (map (fn [photo-data]
-               (copy-to-dir (photo-data :path) good-photo-destination-dir)))))
-
 (defn photocopier
   "Produces a list of operations that will copy photos produced
   by `xf` to `dest-dir`."
@@ -49,7 +42,7 @@
                (copy-to-dir (photo-data :path) dest-dir)))))
 
 (def transductions
-  [copy-good-photos
+  [(photocopier (filter #(> (get-rating %) 3)) good-photo-destination-dir)
    (photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)])
 
 (defn info-for-file [file]
