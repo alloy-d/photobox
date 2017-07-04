@@ -8,7 +8,8 @@
             [me.raynes.fs :as fs]
             [photobox.exif :as exif]
             [photobox.fs :refer (find-photos sort-by-extension)]
-            [photobox.plan :as plan]))
+            [photobox.plan :as plan]
+            [photobox.execute :as execute]))
 
 (def archival-root "/Volumes/Multimedia/Photos")
 (def good-photo-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
@@ -47,3 +48,5 @@
         results-by-transduction (map #(into [] % photo-data) transductions)]
     (apply concat results-by-transduction)))
 
+(defn process []
+  (execute/finalize-and-execute! (plan)))

@@ -7,26 +7,22 @@
   (:require [clojure.string :as string]
             [me.raynes.fs :as fs]))
 
-(defn copy
-  "Returns a plan equivalent to `cp src-file dest-file`."
-  [src-file dest-file]
-  {:operation ::copy-file
-   :src-file src-file
-   :dest-file dest-file})
+(defmulti assess
+  "Checks if an operation makes sense to carry out.
 
-(defn copy-to-dir
-  "Returns a plan equivalent to `cp src-file dest-dir`."
-  [src-file dest-dir]
-  (let [dest-file (string/join "/" [dest-dir (fs/base-name src-file)])]
-    (copy src-file dest-file)))
+  Should return an operation that can definitely be done.
+  If an operation can't be done, should return an `::impossible` or
+  `::noop` operation, with a `:reason` and the `:planned` op."
+  :operation)
 
-(defn photocopier
-  "Produces a list of operations that will copy photos produced
-  by `xf` to `dest-dir`."
-  [xf dest-dir]
-  (comp xf
-        (map (fn [photo-data]
-               (copy-to-dir (photo-data :path) dest-dir)))))
+(defmulti doable?
+  "Checks if an operation is doable.  Used for filtering."
+  :operation)
+
+(defmulti execute!
+  "Performs an operation."
+  :operation)
+
 
 (defn noop
   "Returns a noop operation for the given `planned` op,
@@ -39,6 +35,8 @@
    :reason reason
    :planned planned})
 
+(defmethod doable? ::noop [_] false)
+
 (defn impossible
   "Returns an impossible operation for the given `planned` op,
   with a given `reason`.
@@ -50,13 +48,21 @@
    :reason reason
    :planned planned})
 
-(defmulti assess
-  "Checks if an operation makes sense to carry out.
-  
-  Should return an operation that can definitely be done.
-  If an operation can't be done, should return a `::skipped` or
-  `::noop` operation, with a `:reason` and the `:planned`."
-  :operation)
+(defmethod doable? ::impossible [_] false)
+
+
+(defn copy
+  "Returns a plan equivalent to `cp src-file dest-file`."
+  [src-file dest-file]
+  {:operation ::copy-file
+   :src-file src-file
+   :dest-file dest-file})
+
+(defn copy-to-dir
+  "Returns a plan equivalent to `cp src-file dest-dir`."
+  [src-file dest-dir]
+  (let [dest-file (string/join "/" [dest-dir (fs/base-name src-file)])]
+    (copy src-file dest-file)))
 
 (defmethod assess ::copy-file [op]
   (cond (fs/exists? (:dest-file op))
@@ -71,3 +77,17 @@
           op "Destination is not in an existent directory.")
         
         :else op))
+
+(defmethod doable? ::copy-file [_] true)
+(defmethod execute! ::copy-file [op]
+  (fs/copy+ (op :src-file) (op :dest-file)))
+
+
+(defn photocopier
+  "Helper: produces a list of operations that will copy photos produced
+  by `xf` to `dest-dir`."
+  [xf dest-dir]
+  (comp xf
+        (map (fn [photo-data]
+               (copy-to-dir (photo-data :path) dest-dir)))))
+
