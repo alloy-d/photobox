@@ -82,7 +82,6 @@
 (defmethod execute! ::copy-file [op]
   (fs/copy+ (op :src-file) (op :dest-file)))
 
-
 (defn photocopier
   "Helper: produces a list of operations that will copy photos produced
   by `xf` to `dest-dir`."
@@ -91,3 +90,23 @@
         (map (fn [photo-data]
                (copy-to-dir (photo-data :path) dest-dir)))))
 
+
+
+(defn delete
+  "Returns a plan to delete a file."
+  [file]
+  {:operation ::delete-file
+   :file file})
+
+(defmethod assess ::delete-file [op]
+  (cond (not (fs/exists? (:file op)))
+        (noop op "Target file does not exist.")
+
+        (fs/directory? (:file op))
+        (impossible op "Target file is a directory.")
+
+        :else op))
+
+(defmethod doable? ::delete-file [_] true)
+(defmethod execute! ::delete-file [op]
+  (fs/delete (:file op)))
