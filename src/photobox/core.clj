@@ -11,7 +11,7 @@
             [photobox.plan :as plan]
             [photobox.execute :as execute]))
 
-(def archival-root "/Volumes/Multimedia/Photos")
+(def archive-root "/Volumes/Multimedia/Photos")
 (def good-photo-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
 (def great-photo-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
 (def photo-source "/Volumes/Untitled")
@@ -28,14 +28,13 @@
   [photo-data]
   (let [creation-date (get-date photo-data)]
     (str
-      archival-root "/"
       (t/format "yyyy/yyyy-MM/yyyy-MM-dd/yyyyMMdd-" creation-date)
       (fs/base-name (photo-data :path)))))
 
 (def transductions
   [(plan/photocopier (filter #(> (get-rating %) 3)) good-photo-destination-dir)
    (plan/photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)
-   (map #(plan/copy (:path %) (archival-path %)))])
+   (map #(plan/archive (:path %) archive-root (archival-path %)))])
 
 (defn info-for-file [file]
   (let [exif-data (exif/interesting-data-for-file file)
