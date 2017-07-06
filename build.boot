@@ -56,10 +56,10 @@
   []
   (require 'photobox.core 'clojure.pprint)
   (let [plan (resolve 'photobox.core/plan)
-        print-table (resolve 'clojure.pprint/print-table)]
+        pprint (resolve 'clojure.pprint/pprint)]
     (comp
       (notify :visual true :title "Photobox")
-      (fn [_] (fn [_] (print-table (plan)))))))
+      (fn [_] (fn [_] (pprint (plan)))))))
 
 (deftask show-assessed-plan
   "See what photobox can actually do with the available photos."
@@ -67,8 +67,8 @@
   (require 'photobox.core 'photobox.plan 'clojure.pprint)
   (let [plan (resolve 'photobox.core/plan)
         assess (resolve 'photobox.plan/assess)
-        print-table (resolve 'clojure.pprint/print-table)]
-    (fn [_] (fn [_] (print-table (map assess (plan)))))))
+        pprint (resolve 'clojure.pprint/pprint)]
+    (fn [_] (fn [_] (pprint (map assess (plan)))))))
 
 (deftask show-process-plan
   "See exactly what photobox would do with the available photos."
