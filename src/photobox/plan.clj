@@ -133,8 +133,8 @@
           op "Archive root does not exist.")
 
         :else
-        (copy (op :src-file)
-              (str (op :archive-root) "/" (op :archival-path)))))
+        (assess (copy (op :src-file)
+                      (str (op :archive-root) "/" (op :archival-path))))))
 
 
 (defn delete
