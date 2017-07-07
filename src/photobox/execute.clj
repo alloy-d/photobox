@@ -16,4 +16,10 @@
 (defn finalize-and-execute!
   "Finalizes the given `plans` and executes those that are doable."
   [plans]
-  (into [] (comp final-plans (map plan/execute!)) plans))
+  (let [assessed (map plan/assess plans)
+        not-doable (filter (comp not plan/doable?) assessed)
+        results (into []
+                      (comp (filter plan/doable?) (map plan/execute!))
+                      assessed)]
+    {:skipped not-doable
+     :results results}))
