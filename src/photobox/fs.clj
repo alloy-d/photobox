@@ -7,8 +7,9 @@
   [root]
   (fs/find-files root #".+\.(JPG|RAF)$"))
 
-(defn sort-by-extension [files]
+(defn sort-by-extension
   "Sorts a list of files, giving precedence to the extension."
+  [files]
   (letfn [(key [file]
             (let [path (.getPath file)
                   ext (fs/extension path)]
