@@ -78,11 +78,13 @@
     (apply merge (map postprocess-single data))))
 
 (def exif-for-filename
-  "Same as `exif-processor.core/exif-for-filename`, but with our very specific postprocessing."
+  "Same as `exif-processor.core/exif-for-filename`,
+  but with our very specific postprocessing."
   (comp postprocess processor/exif-for-filename))
 
 (def exif-for-file
-  "Same as `exif-processor.core/exif-for-file`, but with our very specific postprocessing."
+  "Same as `exif-processor.core/exif-for-file`,
+  but with our very specific postprocessing."
   (comp postprocess processor/exif-for-file))
 
 (def available-tags-for-filename
@@ -95,7 +97,8 @@
   (select-keys data interesting-tags))
 
 (defn missing-tags
-  "Lists Exif data keys that we're interested in but don't have in the given data."
+  "Lists Exif data keys that we're interested in
+  but don't have in the given data."
   [data]
   (set/difference interesting-tags (set (keys data))))
 
