@@ -107,7 +107,7 @@
        (assoc res :details details)
        res))))
 
-(defmacro do-a-thing
+(defmacro ^:private do-a-thing
   "Does a thing and returns a result.
 
   Wraps the thing in very rudimentary error handling."
