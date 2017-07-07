@@ -28,6 +28,12 @@
   (let [test (resolve 'adzerk.boot-test/test)]
     (test)))
 
+(deftask watch-tests []
+  (set-env! :source-paths #(conj % "test"))
+  (require 'adzerk.boot-test)
+  (let [test (resolve 'adzerk.boot-test/test)]
+    (comp (watch) (test))))
+
 (deftask check-sources []
   (require 'tolitius.boot-check)
   (let [eastwood (resolve 'tolitius.boot-check/with-eastwood)
