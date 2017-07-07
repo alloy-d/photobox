@@ -140,11 +140,6 @@
         (not (fs/exists? (:src-file op)))
         (impossible op "Source file does not exist.")
 
-        (not (fs/directory?
-               (string/join "/" (butlast (fs/split (:dest-file op))))))
-        (impossible
-          op "Destination is not in an existent directory.")
-
         :else op))
 
 (defmethod doable? ::copy-file [_] true)
