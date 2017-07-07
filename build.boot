@@ -3,9 +3,8 @@
 
 (def project-name 'photobox)
 (def project-version
-  ;; TODO: use git/describe once I've actually tagged something.
-  (let [commit (git/last-commit)]
-    (str (subs commit 0 8) (when (git/dirty?) "-dirty"))))
+  (let [desc (git/describe)]
+    (str desc (when (git/dirty?) "-dirty"))))
 (def project-description
   "Imports and organizes photos.")
 
