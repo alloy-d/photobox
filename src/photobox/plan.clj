@@ -1,6 +1,18 @@
 (ns photobox.plan
   "Utilities for making a plan and then executing it.
 
+  A \"plan\" is a map of the form
+
+      {:operation ::some-operation-name
+       ; ... operation-specific arguments
+      }
+
+  A \"result\" is a map of the form
+
+      {:result :success  ; (or maybe :failure)
+       :executed the-plan
+      }
+
   The point here is to isolate the carrying out of actions
   to more or less one place, so that everything else is pure
   planning that is easier to test and harder to get wrong.
@@ -11,6 +23,18 @@
   2. Assess the plan.  This modifies the plan based on relevant state,
      but does not have any side effects of its own.
   3. Execute the plan.  This is where all the side effects happen.
+
+  ---
+
+  This is all implemented using multimethods.
+  The contract of those methods is something like this:
+
+  - Every operation must have a corresponding implementation of the
+    `assess` method.
+  - Any operation returned by the `assess` method must have an
+    implementation of the `doable?` method.
+  - Any operation for which `doable?` is true must have an implementation
+    of the `execute!` method.
 
   ---
 
@@ -40,7 +64,7 @@
   :operation)
 
 (defmulti execute!
-  "Performs an operation."
+  "Performs an operation.  Should return a result."
   :operation)
 
 
@@ -70,6 +94,31 @@
 
 (defmethod doable? ::impossible [_] false)
 
+(defn result
+  "Returns a result of type `type` for a given `op`,
+  including optional `details`."
+  ([type op]
+   (result type op nil))
+
+  ([type op details]
+   (let [res {:type type
+              :executed op}]
+     (if details
+       (assoc res :details details)
+       res))))
+
+(defmacro do-a-thing
+  "Does a thing and returns a result.
+
+  Wraps the thing in very rudimentary error handling."
+  [op & thing-body]
+  `(try
+     (do
+       ~@thing-body
+       (result :success ~op))
+     (catch Exception e#
+       (result :failure ~op
+               (str "Exception: " (.getClass e#) ": " (.getMessage e#))))))
 
 (defn copy
   "Returns a plan equivalent to `cp src-file dest-file`."
@@ -100,7 +149,8 @@
 
 (defmethod doable? ::copy-file [_] true)
 (defmethod execute! ::copy-file [op]
-  (fs/copy+ (op :src-file) (op :dest-file)))
+  (do-a-thing op
+              (fs/copy+ (op :src-file) (op :dest-file))))
 
 (defn photocopier
   "Helper: produces a list of operations that will copy photos produced
@@ -154,4 +204,5 @@
 
 (defmethod doable? ::delete-file [_] true)
 (defmethod execute! ::delete-file [op]
-  (fs/delete (:file op)))
+  (do-a-thing op
+              (fs/delete (:file op))))

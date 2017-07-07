@@ -87,7 +87,7 @@
       (let [valid-op (copy existent-src nonexistent-dest)]
         (is (= (assess valid-op) valid-op))))))
 
-(deftest copy-execution
+(deftest copy-execution-success
   (let [src (create-test-file)
         dest (imagine-test-path)
         op (copy src dest)
@@ -95,7 +95,17 @@
     (testing "copies a file"
       (is (fs/exists? dest))
       (is (= test-file-contents
-             (slurp (file dest)))))))
+             (slurp (file dest)))))
+    (testing "returns a success result"
+      (is (= :success (:type result))))))
+
+(deftest copy-execution-failure
+  (let [src (imagine-test-path)
+        dest (imagine-test-path)
+        op (copy src dest)
+        result (execute! op)]
+    (testing "returns a failure result"
+      (is (= :failure (:type result))))))
 
 (deftest archive-assessment
   (let [existent-source-file (create-test-file)
