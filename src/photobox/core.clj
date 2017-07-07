@@ -36,6 +36,16 @@
    (plan/photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)
    (map #(plan/archive (:path %) archive-root (archival-path %)))])
 
+(comment
+  ;; Example usage: clean out files before a certain point.
+  ;; This obviously shouldn't live here; just keeping it around
+  ;; until it has a better place to go.
+  (def transductions
+    [(comp
+       (filter #(t/before? (get-date %)
+                           (t/local-date-time "2017-07-03T16:18:16")))
+       (map #(plan/delete (:path %))))]))
+
 (defn info-for-file [file]
   (let [exif-data (exif/interesting-data-for-file file)
         file-path (.getAbsolutePath file)]
