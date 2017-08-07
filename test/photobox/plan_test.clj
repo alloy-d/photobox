@@ -79,7 +79,11 @@
         nonexistent-dest (imagine-test-path)]
     (testing "assesses an existing destination file as a no-op"
       (is (= :photobox.plan/noop
-             (:operation (assess (copy existent-src existent-dest))))))
+             (:operation (assess (copy existent-src existent-dest)))))
+      (testing "unless planned with :overwrite true"
+        (is (= :photobox.plan/copy-file
+               (:operation
+                 (assess (assoc (copy existent-src existent-dest) :overwrite true)))))))
     (testing "assesses a nonexistent source file as impossible"
       (is (= :photobox.plan/impossible
              (:operation (assess (copy nonexistent-src nonexistent-dest))))))
@@ -125,7 +129,10 @@
                           existent-source-file
                           (str existent-root "/" archival-path))]
         (is (= expected-op
-               (assess unassessed-op))))
+               (assess unassessed-op)))
+        (testing "and passes along the :overwrite flag, if true"
+          (is (= (assoc expected-op :overwrite true)
+                 (assess (assoc unassessed-op :overwrite true))))))
       (testing "including assessment of the copy operation"
         (let [assessed-op (assess (archive
                                     nonexistent-source-file

@@ -134,8 +134,9 @@
     (copy src-file dest-file)))
 
 (defmethod assess ::copy-file [op]
-  (cond (fs/exists? (:dest-file op))
-        (noop op "Destination file already exists. Assuming equivalence.")
+  (cond (and (fs/exists? (:dest-file op))
+             (not (:overwrite op)))
+        (noop op "Destination file already exists. Use :overwrite to override.")
 
         (not (fs/exists? (:src-file op)))
         (impossible op "Source file does not exist.")
@@ -178,8 +179,10 @@
           op "Archive root does not exist.")
 
         :else
-        (assess (copy (op :src-file)
-                      (str (op :archive-root) "/" (op :archival-path))))))
+        (let [new-op (copy (op :src-file)
+                           (str (op :archive-root) "/" (op :archival-path)))]
+          (assess (if (:overwrite op) (assoc new-op :overwrite true)
+                    new-op)))))
 
 
 (defn delete
