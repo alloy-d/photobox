@@ -89,8 +89,9 @@
 (deftask process-photos
   "Process the available photos."
   []
-  (require 'photobox.core 'photobox.execute 'clojure.java.io 'clojure.pprint 'java-time)
-  (let [format-time (resolve 'java-time/format)
+  (require 'photobox.core 'photobox.execute 'clojure.java.io 'clojure.pprint 'java-time 'me.raynes.fs)
+  (let [expand-home (resolve 'me.raynes.fs/expand-home)
+        format-time (resolve 'java-time/format)
         process (resolve 'photobox.core/process)
         pprint (resolve 'clojure.pprint/pprint)
         summarize (resolve 'photobox.execute/summarize-execution)
@@ -100,7 +101,7 @@
       (notify :visual true :title "Photobox")
       (fn [_] (fn [_]
                 (let [start-time (zoned-date-time)
-                      results-name (str "results-" (format-time :iso-offset-date-time start-time) ".edn")
+                      results-name (expand-home (str "~/.photobox.d/" "results-" (format-time :iso-offset-date-time start-time) ".edn"))
                       results (assoc (process)
                                      :start (format-time :iso-date-time start-time))]
                   (with-open [results-file (writer results-name)]
