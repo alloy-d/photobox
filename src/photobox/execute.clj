@@ -26,3 +26,25 @@
      :results results
      :elapsed (double (/ (- (. java.lang.System (nanoTime)) start-time)
                          1000000))}))
+
+(defn- group-and-process
+  "Like `group-by`, plus a processing function on the grouped results."
+  [process group coll]
+  (apply merge (map (fn [[k items]] {k (process items)})
+                    (group-by group coll))))
+
+(def ^:private group-and-count (partial group-and-process count))
+
+(defn summarize-execution
+  "Produces a summary of results that would be helpful to a human."
+  [result]
+  (let [skipped (:skipped result)
+        results (:results result)
+        results-by-type (group-by :type results)]
+    {:elapsed (:elapsed result)
+     :skipped {:count (count skipped)
+               :types (group-and-count :operation skipped)}
+     :results {:count (count results)
+               :types (group-and-process
+                        (partial group-and-count (comp :operation :executed))
+                        :type results)}}))
