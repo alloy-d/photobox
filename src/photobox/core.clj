@@ -34,7 +34,10 @@
 (def transductions
   [(plan/photocopier (filter #(> (get-rating %) 3)) good-photo-destination-dir)
    (plan/photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)
-   (map #(plan/archive (:path %) archive-root (archival-path %)))])
+   (map #(plan/archive (:path %) archive-root (archival-path %)))
+   (comp (filter #(>= (get-rating %) 1))
+         (map #(assoc (plan/archive (:path %) archive-root (archival-path %)) :overwrite true)))
+   ])
 
 (comment
   ;; Example usage: clean out files before a certain point.
