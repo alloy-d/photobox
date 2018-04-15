@@ -7,6 +7,12 @@
   [root]
   (fs/find-files root #".+\.(JPG|RAF)$"))
 
+(defn find-videos
+  "Returns a list of all videos under a given path.
+  Naively searches for things with a .MOV extension."
+  [root]
+  (fs/find-files root #".+\.MOV$"))
+
 (defn sort-by-extension
   "Sorts a list of files, giving precedence to the extension."
   [files]

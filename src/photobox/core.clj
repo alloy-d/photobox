@@ -9,18 +9,32 @@
             [photobox.metadata.core :as metadata]
             [photobox.metadata.image :as exif]
             [photobox.metadata.video :as video-metadata]
-            [photobox.fs :refer (find-photos sort-by-extension)]
+            [photobox.fs :refer (find-photos find-videos sort-by-extension)]
             [photobox.plan :as plan]
             [photobox.execute :as execute]))
 
-(def archive-root "/Volumes/Multimedia/Photos")
+(def archive-root
+  {:photo "/Volumes/Multimedia/Photos"
+   :video "/Volumes/Multimedia/Videos"})
 (def good-photo-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
 (def great-photo-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
-(def photo-source "/Volumes/Untitled")
-(def photo-files (sort-by-extension (find-photos photo-source)))
+(def file-source "/Volumes/Untitled")
+
+(def files
+  (let [photo-files (sort-by-extension (find-photos file-source))
+        video-files (find-videos file-source)
+        classifier (fn [type]
+                     (fn [file] {:type type :file file}))]
+    (concat (map (classifier :photo) photo-files)
+            (map (classifier :video) video-files))))
+
+(defn is-photo? [file]
+  (= (:type file) :photo))
+(defn is-video? [file]
+  (= (:type file) :video))
 
 (defn- get-rating [photo-data]
-  ((photo-data :exif-data) "Rating"))
+  ((photo-data :exif-data) "Rating" -1))
 (defn- get-date [photo-data]
   (metadata/parse-exif-date ((photo-data :exif-data) "Date/Time")))
 
@@ -36,9 +50,9 @@
 (def transductions
   [(plan/photocopier (filter #(> (get-rating %) 3)) good-photo-destination-dir)
    (plan/photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)
-   (map #(plan/archive (:path %) archive-root (archival-path %)))
+   (map #(plan/archive (:path %) (archive-root (:type %)) (archival-path %)))
    (comp (filter #(>= (get-rating %) 1))
-         (map #(assoc (plan/archive (:path %) archive-root (archival-path %)) :overwrite true)))
+         (map #(assoc (plan/archive (:path %) (archive-root (:type %)) (archival-path %)) :overwrite true)))
    ])
 
 (comment
@@ -51,15 +65,23 @@
                            (t/local-date-time "2017-07-03T16:18:16")))
        (map #(plan/delete (:path %))))]))
 
-(defn info-for-file [file]
+(defmulti info-for-file :type)
+(defmethod info-for-file :photo [{:keys [file]}]
   (let [exif-data (exif/interesting-data-for-file file)
         file-path (.getAbsolutePath file)]
-    {:path file-path
+    {:type :photo
+     :path file-path
      :exif-data exif-data}))
+(defmethod info-for-file :video [{:keys [file]}]
+  (let [file-path (.getAbsolutePath file)
+        date-time (video-metadata/date-time-for-filename file-path)]
+    {:type :video
+     :path file-path
+     :exif-data {"Date/Time" date-time}}))
 
 (defn plan []
-  (let [photo-data (map info-for-file photo-files)
-        results-by-transduction (map #(into [] % photo-data) transductions)]
+  (let [files-data (map info-for-file files)
+        results-by-transduction (map #(into [] % files-data) transductions)]
     (apply concat results-by-transduction)))
 
 (defn process []
