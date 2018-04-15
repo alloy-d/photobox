@@ -16,8 +16,8 @@
 (def archive-root
   {:photo "/Volumes/Multimedia/Photos"
    :video "/Volumes/Multimedia/Videos"})
-(def good-photo-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
-(def great-photo-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
+(def good-capture-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
+(def great-capture-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
 (def file-source "/Volumes/Untitled")
 
 (def files
@@ -28,28 +28,23 @@
     (concat (map (classifier :photo) photo-files)
             (map (classifier :video) video-files))))
 
-(defn is-photo? [file]
-  (= (:type file) :photo))
-(defn is-video? [file]
-  (= (:type file) :video))
-
-(defn- get-rating [photo-data]
-  ((photo-data :exif-data) "Rating" -1))
-(defn- get-date [photo-data]
-  (metadata/parse-exif-date ((photo-data :exif-data) "Date/Time")))
+(defn- get-rating [capture-data]
+  ((capture-data :exif-data) "Rating" -1))
+(defn- get-date [capture-data]
+  (metadata/parse-exif-date ((capture-data :exif-data) "Date/Time")))
 
 (defn archival-path
   "Returns a path in the format I use to archive files:
   `yyyy/yyyy-MM/yyyy-MM-dd/yyyyMMdd-(original filename)`."
-  [photo-data]
-  (let [creation-date (get-date photo-data)]
+  [capture-data]
+  (let [creation-date (get-date capture-data)]
     (str
       (t/format "yyyy/yyyy-MM/yyyy-MM-dd/yyyyMMdd-" creation-date)
-      (fs/base-name (photo-data :path)))))
+      (fs/base-name (capture-data :path)))))
 
 (def transductions
-  [(plan/photocopier (filter #(> (get-rating %) 3)) good-photo-destination-dir)
-   (plan/photocopier (filter #(= (get-rating %) 5)) great-photo-destination-dir)
+  [(plan/photocopier (filter #(> (get-rating %) 3)) good-capture-destination-dir)
+   (plan/photocopier (filter #(= (get-rating %) 5)) great-capture-destination-dir)
    (map #(plan/archive (:path %) (archive-root (:type %)) (archival-path %)))
    (comp (filter #(>= (get-rating %) 1))
          (map #(assoc (plan/archive (:path %) (archive-root (:type %)) (archival-path %)) :overwrite true)))
