@@ -6,7 +6,9 @@
             [clojure.pprint :refer (pprint)]
             [java-time :as t]
             [me.raynes.fs :as fs]
-            [photobox.exif :as exif]
+            [photobox.metadata.core :as metadata]
+            [photobox.metadata.image :as exif]
+            [photobox.metadata.video :as video-metadata]
             [photobox.fs :refer (find-photos sort-by-extension)]
             [photobox.plan :as plan]
             [photobox.execute :as execute]))
@@ -20,7 +22,7 @@
 (defn- get-rating [photo-data]
   ((photo-data :exif-data) "Rating"))
 (defn- get-date [photo-data]
-  (exif/parse-exif-date ((photo-data :exif-data) "Date/Time")))
+  (metadata/parse-exif-date ((photo-data :exif-data) "Date/Time")))
 
 (defn archival-path
   "Returns a path in the format I use to archive files:

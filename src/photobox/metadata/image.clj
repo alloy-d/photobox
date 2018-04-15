@@ -1,10 +1,9 @@
-(ns photobox.exif
+(ns photobox.metadata.image
   "Utilities for working with Exif data.
 
   Includes some hacked-in special processing for files from the Fujifilm X-T2."
   (:require [clojure.set :as set]
-            [exif-processor.core :as processor]
-            [java-time :as t]))
+            [exif-processor.core :as processor]))
 
 (def interesting-tags #{"Date/Time"
                         "Development Dynamic Range"
@@ -54,11 +53,6 @@
                    "1" "Re-developed from RAW"}}
    0x1438 {:name "Image Count"
            :value #(Integer/parseInt %)}})
-
-(defn parse-exif-date
-  "Parses an Exif date into something reasonable."
-  [exif-date]
-  (t/local-date-time "yyyy:MM:dd HH:mm:ss" exif-date))
 
 (defn- unknown-tag-number
   "Parses the numerical component of auto-generated unknown tag names."
