@@ -18,6 +18,7 @@
    :video "/Volumes/Multimedia/Videos"})
 (def good-capture-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
 (def great-capture-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
+(def notes-capture-destination-dir (fs/expand-home "~/Desktop/photos-to-note/"))
 (def file-source "/Volumes/Untitled")
 
 (def files
@@ -45,6 +46,7 @@
 (def transductions
   [(plan/photocopier (filter #(> (get-rating %) 3)) good-capture-destination-dir)
    (plan/photocopier (filter #(= (get-rating %) 5)) great-capture-destination-dir)
+   (plan/photocopier (filter #(= (get-rating %) 3)) notes-capture-destination-dir)
    (map #(plan/archive (:path %) (archive-root (:type %)) (archival-path %)))
    (comp (filter #(>= (get-rating %) 1))
          (map #(assoc (plan/archive (:path %) (archive-root (:type %)) (archival-path %)) :overwrite true)))
