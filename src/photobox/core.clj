@@ -13,29 +13,17 @@
             [photobox.plan :as plan]
             [photobox.execute :as execute]))
 
-(def archive-root
-  {:photo "/Volumes/Multimedia/Photos"
-   :video "/Volumes/Multimedia/Videos"})
-(def good-capture-destination-dir (fs/expand-home "~/Desktop/good-photos/"))
-(def great-capture-destination-dir (fs/expand-home "~/Desktop/great-photos/"))
-(def notes-capture-destination-dir (fs/expand-home "~/Desktop/photos-to-note/"))
-(def file-source "/Volumes/Untitled")
-
-(def files
-  (let [photo-files (sort-by-extension (find-photos file-source))
-        video-files (find-videos file-source)
-        classifier (fn [type]
-                     (fn [file] {:type type :file file}))]
-    (concat (map (classifier :photo) photo-files)
-            (map (classifier :video) video-files))))
-
 (defn- get-rating [capture-data]
   ((capture-data :exif-data) "Rating" -1))
 (defn- get-date [capture-data]
   (metadata/parse-exif-date ((capture-data :exif-data) "Date/Time")))
 
+(def archive-root
+  {:photo "/Volumes/Multimedia/Photos"
+   :video "/Volumes/Multimedia/Videos"})
+
 (defn archival-path
-  "Returns a path in the format I use to archive files:
+  "Returns a path with the following directory structure:
   `yyyy/yyyy-MM/yyyy-MM-dd/yyyyMMdd-(original filename)`."
   [capture-data]
   (let [creation-date (get-date capture-data)]
@@ -43,14 +31,51 @@
       (t/format "yyyy/yyyy-MM/yyyy-MM-dd/yyyyMMdd-" creation-date)
       (fs/base-name (capture-data :path)))))
 
-(def transductions
-  [(plan/photocopier (filter #(> (get-rating %) 3)) good-capture-destination-dir)
-   (plan/photocopier (filter #(= (get-rating %) 5)) great-capture-destination-dir)
-   (plan/photocopier (filter #(= (get-rating %) 3)) notes-capture-destination-dir)
-   (map #(plan/archive (:path %) (archive-root (:type %)) (archival-path %)))
-   (comp (filter #(>= (get-rating %) 1))
-         (map #(assoc (plan/archive (:path %) (archive-root (:type %)) (archival-path %)) :overwrite true)))
-   ])
+(def archival-process
+  (map #(plan/archive (:path %) (archive-root (:type %)) (archival-path %))))
+
+(def xt2-process
+  "This is the process I use for photos from my Fujifilm X-T2.
+
+  I use the on-camera rating system to encode what I'd like done
+  with some photos.  Based on those ratings, this process sorts
+  photos into directories on my desktop before archiving everything.
+
+  It then forcibly re-archives anything with a rating, to ensure
+  that rating data makes it into the archive."
+
+  (let [good-capture-destination-dir (fs/expand-home "~/Desktop/good-photos/")
+        great-capture-destination-dir (fs/expand-home "~/Desktop/great-photos/")
+        notes-capture-destination-dir (fs/expand-home "~/Desktop/photos-to-note/")]
+
+    ;; Do some special handling for photos that I rated on-camera...)
+    [(plan/photocopier (filter #(> (get-rating %) 3)) good-capture-destination-dir)
+     (plan/photocopier (filter #(= (get-rating %) 5)) great-capture-destination-dir)
+     (plan/photocopier (filter #(= (get-rating %) 3)) notes-capture-destination-dir)
+
+     ;; ...then do the usual archival process...
+     archival-process
+
+     ;; ...then re-archive anything that was rated, in case I've rated
+     ;; some files since they were first archived.
+     (comp (filter #(>= (get-rating %) 1))
+           (map #(assoc (plan/archive (:path %) (archive-root (:type %)) (archival-path %)) :overwrite true)))]))
+
+(def gr-iii-process
+  "This is the process I use for photos from my RICOH GR III.
+
+  I sort all the new photos into a review directory on my desktop,
+  with the JPEGs and RAWs separated into their own folders.
+
+  Then I archive everything."
+
+  (let [ricoh-review-dir (fs/expand-home "~/Desktop/ricoh-review/")]
+    [(plan/photocopier (filter #(= (fs/extension (:path %)) ".JPG"))
+                       (str ricoh-review-dir "/JPEG"))
+     (plan/photocopier (filter #(= (fs/extension (:path %)) ".DNG"))
+                       (str ricoh-review-dir "/RAW"))
+
+     archival-process]))
 
 (comment
   ;; Example usage: clean out files before a certain point.
@@ -76,10 +101,28 @@
      :path file-path
      :exif-data {"Date/Time" date-time}}))
 
-(defn plan []
-  (let [files-data (map info-for-file files)
-        results-by-transduction (map #(into [] % files-data) transductions)]
+
+(def processes
+  [{:src "/Volumes/Untitled"
+    :process xt2-process}
+   {:src "/Volumes/RICOH GR"
+    :process gr-iii-process}])
+
+(defn files-for-source [source]
+  (let [photo-files (sort-by-extension (find-photos source))
+        video-files (find-videos source)
+        classifier (fn [type]
+                     (fn [file] {:type type :file file}))]
+    (concat (map (classifier :photo) photo-files)
+            (map (classifier :video) video-files))))
+
+(defn plan-single-process [{:keys [src process]}]
+  (let [files-data (map info-for-file (files-for-source src))
+        results-by-transduction (map #(into [] % files-data) process)]
     (apply concat results-by-transduction)))
+
+(defn plan []
+  (apply concat (map plan-single-process processes)))
 
 (defn process []
   (execute/finalize-and-execute! (plan)))
