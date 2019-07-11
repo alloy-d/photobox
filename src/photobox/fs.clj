@@ -5,7 +5,7 @@
   "Returns a list of all photos under a given path.
   Naively searches for things with a .JPG or .RAF extension."
   [root]
-  (fs/find-files root #".+\.(JPG|RAF)$"))
+  (fs/find-files root #".+\.(JPG|RAF|DNG)$"))
 
 (defn find-videos
   "Returns a list of all videos under a given path.
