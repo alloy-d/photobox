@@ -16,7 +16,7 @@
 (defn finalize-and-execute!
   "Finalizes the given `plans` and executes those that are doable."
   [plans]
-  (let [start-time (. java.lang.System (nanoTime))
+  (let [start-time (java.lang.System/nanoTime)
         assessed (map plan/assess plans)
         not-doable (filter (comp not plan/doable?) assessed)
         results (into []
@@ -24,7 +24,7 @@
                       assessed)]
     {:skipped not-doable
      :results results
-     :elapsed (double (/ (- (. java.lang.System (nanoTime)) start-time)
+     :elapsed (double (/ (- (java.lang.System/nanoTime) start-time)
                          1000000))}))
 
 (defn- group-and-process

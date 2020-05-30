@@ -70,7 +70,7 @@
 (defn- imagine-test-path
   "Returns a temporary path that should not exist."
   []
-  (str (fs/tmpdir) (fs/temp-name "photobox-test-file")))
+  (str (fs/tmpdir) "/" (fs/temp-name "photobox-test-file")))
 
 (deftest copy-assessment
   (let [existent-src (create-test-file)
