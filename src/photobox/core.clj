@@ -44,14 +44,17 @@
   It then forcibly re-archives anything with a rating, to ensure
   that rating data makes it into the archive."
 
-  (let [good-capture-destination-dir (fs/expand-home "~/Desktop/good-photos/")
-        great-capture-destination-dir (fs/expand-home "~/Desktop/great-photos/")
-        notes-capture-destination-dir (fs/expand-home "~/Desktop/photos-to-note/")]
+  (let [good-capture-destination-dir (fs/expand-home "~/Pictures/good-photos/")
+        great-capture-destination-dir (fs/expand-home "~/Pictures/great-photos/")
+        notes-capture-destination-dir (fs/expand-home "~/Pictures/photos-to-note/")
+        fuji-review-dir (fs/expand-home "~/Pictures/fuji-review/")]
 
     ;; Do some special handling for photos that I rated on-camera...)
     [(plan/photocopier (filter #(> (get-rating %) 3)) good-capture-destination-dir)
      (plan/photocopier (filter #(= (get-rating %) 5)) great-capture-destination-dir)
      (plan/photocopier (filter #(= (get-rating %) 3)) notes-capture-destination-dir)
+
+     (plan/photocopier (map identity) fuji-review-dir)
 
      ;; ...then do the usual archival process...
      archival-process
@@ -69,11 +72,8 @@
 
   Then I archive everything."
 
-  (let [ricoh-review-dir (fs/expand-home "~/Desktop/ricoh-review/")]
-    [(plan/photocopier (filter #(= (fs/extension (:path %)) ".JPG"))
-                       (str ricoh-review-dir "/JPEG"))
-     (plan/photocopier (filter #(= (fs/extension (:path %)) ".DNG"))
-                       (str ricoh-review-dir "/RAW"))
+  (let [ricoh-review-dir (fs/expand-home "~/Pictures/ricoh-review/")]
+     [(plan/photocopier (map identity) ricoh-review-dir)
 
      archival-process]))
 
@@ -89,11 +89,15 @@
 
 (defmulti info-for-file :type)
 (defmethod info-for-file :photo [{:keys [file]}]
-  (let [exif-data (exif/interesting-data-for-file file)
-        file-path (.getAbsolutePath file)]
-    {:type :photo
-     :path file-path
-     :exif-data exif-data}))
+  (try
+    (let [exif-data (exif/interesting-data-for-file file)
+          file-path (.getAbsolutePath file)]
+      {:type :photo
+       :path file-path
+       :exif-data exif-data})
+    (catch Exception ex
+           (println (str "Error handling " file))
+           (throw ex))))
 (defmethod info-for-file :video [{:keys [file]}]
   (let [file-path (.getAbsolutePath file)
         date-time (video-metadata/date-time-for-filename file-path)]
