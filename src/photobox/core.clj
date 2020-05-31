@@ -19,8 +19,8 @@
   (metadata/parse-exif-date ((capture-data :exif-data) "Date/Time")))
 
 (def archive-root
-  {:photo "/Volumes/Multimedia/Photos"
-   :video "/Volumes/Multimedia/Videos"})
+  {:photo "/mnt/henry/media/Photos"
+   :video "/mnt/henry/media/Videos"})
 
 (defn archival-path
   "Returns a path with the following directory structure:
@@ -44,10 +44,10 @@
   It then forcibly re-archives anything with a rating, to ensure
   that rating data makes it into the archive."
 
-  (let [good-capture-destination-dir (fs/expand-home "~/Pictures/good-photos/")
-        great-capture-destination-dir (fs/expand-home "~/Pictures/great-photos/")
-        notes-capture-destination-dir (fs/expand-home "~/Pictures/photos-to-note/")
-        fuji-review-dir (fs/expand-home "~/Pictures/fuji-review/")]
+  (let [good-capture-destination-dir (fs/expand-home "~/images/good-photos/")
+        great-capture-destination-dir (fs/expand-home "~/images/great-photos/")
+        notes-capture-destination-dir (fs/expand-home "~/images/photos-to-note/")
+        fuji-review-dir (fs/expand-home "~/images/fuji-review/")]
 
     ;; Do some special handling for photos that I rated on-camera...)
     [(plan/photocopier (filter #(> (get-rating %) 3)) good-capture-destination-dir)
@@ -67,12 +67,10 @@
 (def gr-iii-process
   "This is the process I use for photos from my RICOH GR III.
 
-  I sort all the new photos into a review directory on my desktop,
-  with the JPEGs and RAWs separated into their own folders.
-
+  I put everything in a review directory.
   Then I archive everything."
 
-  (let [ricoh-review-dir (fs/expand-home "~/Pictures/ricoh-review/")]
+  (let [ricoh-review-dir (fs/expand-home "~/images/ricoh-review/")]
      [(plan/photocopier (map identity) ricoh-review-dir)
 
      archival-process]))
@@ -109,7 +107,7 @@
 (def processes
   [{:src "/Volumes/Untitled"
     :process xt2-process}
-   {:src "/Volumes/RICOH GR"
+   {:src "/run/media/awl/RICOH GR"
     :process gr-iii-process}])
 
 (defn files-for-source [source]
