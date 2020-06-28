@@ -105,7 +105,7 @@
 
 
 (def processes
-  [{:src "/Volumes/Untitled"
+  [{:src "/run/media/awl/disk"
     :process xt2-process}
    {:src "/run/media/awl/RICOH GR"
     :process gr-iii-process}])
