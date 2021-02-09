@@ -119,12 +119,11 @@
             (map (classifier :video) video-files))))
 
 (defn plan-single-process [{:keys [src process]}]
-  (let [files-data (map info-for-file (files-for-source src))
-        results-by-transduction (map #(into [] % files-data) process)]
-    (apply concat results-by-transduction)))
+  (let [files-data (map info-for-file (files-for-source src))]
+    (mapcat #(into [] % files-data) process)))
 
 (defn plan []
-  (apply concat (map plan-single-process processes)))
+  (mapcat plan-single-process processes))
 
 (defn process []
   (execute/finalize-and-execute! (plan)))
