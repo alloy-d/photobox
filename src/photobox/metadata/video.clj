@@ -7,6 +7,6 @@
 (defn date-time-for-filename
   "Uses exiftool to extract the original date and time for a file."
   [filename]
-  (let [output (:out (sh "exiftool" "-csv" filename "-DateTimeOriginal"))
+  (let [output (:out (sh "exiftool" "-csv" filename "-CreateDate"))
         data-line (second (split-lines output))]
     (second (split data-line #","))))
