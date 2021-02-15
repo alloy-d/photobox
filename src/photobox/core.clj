@@ -14,8 +14,11 @@
   (metadata/parse-exif-date ((capture-data :exif-data) "Date/Time")))
 
 (def archive-root
-  {:photo "/mnt/henry/media/Photos"
-   :video "/mnt/henry/media/Videos"})
+  ({"Linux" {:photo "/mnt/henry/media/Photos"
+             :video "/mnt/henry/media/Videos"}
+    "Mac OS X" {:photo "/Volumes/Multimedia/Photos"
+                :video "/Volumes/Multimedia/Videos"}}
+   (System/getProperty "os.name")))
 
 (defn archival-path
   "Returns a path with the following directory structure:
@@ -100,10 +103,15 @@
 
 
 (def processes
-  [{:src "/run/media/awl/disk"
-    :process xt2-process}
-   {:src "/run/media/awl/RICOH GR"
-    :process gr-iii-process}])
+  ({"Linux" [{:src "/run/media/awl/disk"
+              :process xt2-process}
+             {:src "/run/media/awl/RICOH GR"
+              :process gr-iii-process}]
+    "Mac OS X" [{:src "/Volumes/Untitled 1"
+                 :process [archival-process]}
+                {:src "/Volumes/RICOH GR"
+                 :process [archival-process]}]}
+   (System/getProperty "os.name")))
 
 (defn files-for-source [source]
   (let [photo-files (sort-by-extension (find-photos source))
