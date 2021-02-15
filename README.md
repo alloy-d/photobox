@@ -61,10 +61,10 @@ fit my workflow better.
 
 ## How I use this tool
 
-It uses [boot][boot].  My entry point here is
+My entry point here is
 
 ```sh
-$ boot process-photos
+$ clj -M:process
 ```
 
 which does the following (in this order):
@@ -94,10 +94,3 @@ and then, if it's "doable" (e.g., not impossible or a no-op), "executed"
 
 So: this makes a bunch of plans, then assesses and executes them in
 bulk.  That's it.
-
-If you're interested in more detail, I'd recommend cloning this and
-running `boot docs` to generate some nice [Marginalia][marginalia]
-output in `target/docs/uberdoc.html`.
-
-[boot]: http://boot-clj.com/
-[marginalia]: https://github.com/gdeer81/marginalia

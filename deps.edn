@@ -6,7 +6,9 @@
   me.raynes/fs {:mvn/version "1.4.6"}}
 
  :aliases
- {:test {:extra-paths ["test"]
+ {:process {:main-opts ["-m" "photobox.runner"]}
+
+  :test {:extra-paths ["test"]
          :extra-deps
          {org.clojure/test.check {:mvn/version "1.1.0"}
           com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"

@@ -19,22 +19,22 @@
 
 (defn show-plan
   "Print what photobox would like to do with the available photos."
-  [_]
+  [& _]
   (pprint (core/plan)))
 
 (defn show-assessed-plan
   "Print what photobox can actually do with the available photos."
-  [_]
+  [& _]
   (pprint (map plan/assess (core/plan))))
 
 (defn show-process-plan
   "Print exactly what photobox would do with the available photos."
-  [_]
+  [& _]
   (pprint (into [] execute/final-plans (core/plan))))
 
 (defn process-photos
   "Process the available photos."
-  [_]
+  [& _]
   (let [start-time (t/zoned-date-time)
         results-name (fs/expand-home (str photobox-dir "/results-" (t/format :iso-offset-date-time start-time) ".edn"))
         results (assoc (core/process)
@@ -44,3 +44,5 @@
       (pprint results results-file))
     (pprint (assoc (execute/summarize-execution results)
                    :results-file results-name))))
+
+(defn -main [] (process-photos))
