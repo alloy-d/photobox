@@ -1,10 +1,5 @@
 (ns photobox.core
-  (:require [clojure.core.async :as async
-             :refer (<! >! <!! go go-loop chan
-                        onto-chan mult tap pipe)]
-            [clojure.string :as string]
-            [clojure.pprint :refer (pprint)]
-            [java-time :as t]
+  (:require [java-time :as t]
             [me.raynes.fs :as fs]
             [photobox.metadata.core :as metadata]
             [photobox.metadata.image :as exif]

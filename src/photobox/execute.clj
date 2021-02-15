@@ -39,8 +39,7 @@
   "Produces a summary of results that would be helpful to a human."
   [result]
   (let [skipped (:skipped result)
-        results (:results result)
-        results-by-type (group-by :type results)]
+        results (:results result)]
     {:elapsed (:elapsed result)
      :skipped {:count (count skipped)
                :types (group-and-count :operation skipped)}

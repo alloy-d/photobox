@@ -57,7 +57,7 @@
 (defn- unknown-tag-number
   "Parses the numerical component of auto-generated unknown tag names."
   [tag-name]
-  (if-let [matches (re-matches #"Unknown tag \(0x([0-9a-f]+)\)" tag-name)]
+  (when-let [matches (re-matches #"Unknown tag \(0x([0-9a-f]+)\)" tag-name)]
     (Integer/parseInt (nth matches 1) 16)))
 
 (defn- postprocess
@@ -65,7 +65,7 @@
   [data]
   (letfn [(postprocess-single [[tag value]]
             (let [number (unknown-tag-number tag)
-                  postprocessor (if number (postprocessors number))]
+                  postprocessor (when number (postprocessors number))]
               (if postprocessor
                 {(:name postprocessor) ((:value postprocessor) value)}
                 {tag value})))]
