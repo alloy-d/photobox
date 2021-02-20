@@ -5,7 +5,8 @@
   (:require [clojure.set :as set]
             [exif-processor.core :as processor]))
 
-(def interesting-tags #{"Date/Time"
+(def interesting-tags #{"Contrast"
+                        "Date/Time"
                         "Development Dynamic Range"
                         "Dynamic Range"
                         "Dynamic Range Setting"
@@ -15,6 +16,7 @@
                         "Exposure Time"
                         "F-Number"
                         "Focal Length"
+                        "Focal Length 35"
                         "Focus Mode"
                         "Highlight Tone"
                         "ISO Speed Ratings"
@@ -28,9 +30,11 @@
                         "Saturation"
                         "Sequence Number"
                         "Shadow Tone"
+                        "Sharpness"
                         "Shutter Speed Value"
                         "Shutter Type"
-                        "Software"})
+                        "Software"
+                        "Subject Distance Range"})
 
 (def postprocessors
   {0x1022 {:name "AF Mode"
