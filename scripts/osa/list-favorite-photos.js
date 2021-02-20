@@ -18,7 +18,7 @@ const getBasics = (item) => {
 
   return {
     'apple-photos-id': id,
-    filename,
+    'original-filename': filename,
     date,
     'archive-path': archivePath,
   };
