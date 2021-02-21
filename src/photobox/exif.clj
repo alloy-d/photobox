@@ -2,8 +2,7 @@
   "Utilities for working with Exif data.
 
   Includes some hacked-in special processing for files from the Fujifilm X-T2."
-  (:require [clojure.set :as set]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [exif-processor.core :as processor]
             [photobox.metadata.core :refer [parse-exif-date]]))
@@ -45,14 +44,14 @@
     key.
   - defining `decode-exif-value` to transform the raw value, if
     `:convert` is given."
-  ([tag-name value-spec & {:keys [convert raw-name]
-                           :or {raw-name tag-name}}]
-   (let [spec-key# (exif-name->keyword tag-name)]
+  ([tag-name value-spec & {:keys [convert raw-name]}]
+   (let [spec-key# (exif-name->keyword tag-name)
+         raw-name# (or raw-name tag-name)]
      `(do
         (s/def ~spec-key# ~value-spec)
-        (defmethod decode-exif-key ~raw-name [_#] ~spec-key#)
+        (defmethod decode-exif-key ~raw-name# [_#] ~spec-key#)
         ~(when convert
-           `(defmethod decode-exif-value ~raw-name [tag-obj#]
+           `(defmethod decode-exif-value ~raw-name# [tag-obj#]
               (~convert (:value tag-obj#))))
 
         ~spec-key#))))
