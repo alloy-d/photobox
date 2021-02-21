@@ -1,6 +1,7 @@
 (ns photobox.core
   (:require [java-time :as t]
             [me.raynes.fs :as fs]
+            [photobox.archive :as archive]
             [photobox.exif :as exif]
             [photobox.metadata.core :as metadata]
             [photobox.metadata.video :as video-metadata]
@@ -13,13 +14,6 @@
 (defn- get-date [capture-data]
   ((capture-data :exif-data) :photobox.exif/date-time))
 
-(def archive-root
-  ({"Linux" {:photo "/mnt/henry/media/Photos"
-             :video "/mnt/henry/media/Videos"}
-    "Mac OS X" {:photo "/Volumes/Multimedia/Photos"
-                :video "/Volumes/Multimedia/Videos"}}
-   (System/getProperty "os.name")))
-
 (defn archival-path
   "Returns a path with the following directory structure:
   `yyyy/yyyy-MM/yyyy-MM-dd/yyyyMMdd-(original filename)`."
@@ -30,7 +24,7 @@
       (fs/base-name (capture-data :path)))))
 
 (def archival-process
-  (map #(plan/archive (:path %) (archive-root (:type %)) (archival-path %))))
+  (map #(plan/archive (:path %) (archive/root (:type %)) (archival-path %))))
 
 (def xt2-process
   "This is the process I use for photos from my Fujifilm X-T2.
@@ -60,7 +54,7 @@
      ;; ...then re-archive anything that was rated, in case I've rated
      ;; some files since they were first archived.
      (comp (filter #(>= (get-rating %) 1))
-           (map #(assoc (plan/archive (:path %) (archive-root (:type %)) (archival-path %)) :overwrite true)))]))
+           (map #(assoc (plan/archive (:path %) (archive/root (:type %)) (archival-path %)) :overwrite true)))]))
 
 (def gr-iii-process
   "This is the process I use for photos from my RICOH GR III.
