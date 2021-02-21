@@ -1,17 +1,17 @@
 (ns photobox.core
   (:require [java-time :as t]
             [me.raynes.fs :as fs]
+            [photobox.exif :as exif]
             [photobox.metadata.core :as metadata]
-            [photobox.metadata.image :as exif]
             [photobox.metadata.video :as video-metadata]
             [photobox.fs :refer (find-photos find-videos sort-by-extension)]
             [photobox.plan :as plan]
             [photobox.execute :as execute]))
 
 (defn- get-rating [capture-data]
-  ((capture-data :exif-data) "Rating" -1))
+  ((capture-data :exif-data) :photobox.exif/rating -1))
 (defn- get-date [capture-data]
-  (metadata/parse-exif-date ((capture-data :exif-data) "Date/Time")))
+  ((capture-data :exif-data) :photobox.exif/date-time))
 
 (def archive-root
   ({"Linux" {:photo "/mnt/henry/media/Photos"
@@ -86,7 +86,7 @@
 (defmulti info-for-file :type)
 (defmethod info-for-file :photo [{:keys [file]}]
   (try
-    (let [exif-data (exif/interesting-data-for-file file)
+    (let [exif-data (exif/exif-for-file file)
           file-path (.getAbsolutePath file)]
       {:type :photo
        :path file-path
@@ -96,10 +96,10 @@
            (throw ex))))
 (defmethod info-for-file :video [{:keys [file]}]
   (let [file-path (.getAbsolutePath file)
-        date-time (video-metadata/date-time-for-filename file-path)]
+        date-time (metadata/parse-exif-date (video-metadata/date-time-for-filename file-path))]
     {:type :video
      :path file-path
-     :exif-data {"Date/Time" date-time}}))
+     :exif-data {:photobox.exif/date-time date-time}}))
 
 
 (def processes
