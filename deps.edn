@@ -4,6 +4,7 @@
   org.clojure/data.json {:mvn/version "1.0.0"}
   clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
   io.joshmiller/exif-processor {:mvn/version "0.2.0"}
+  io.replikativ/datahike {:mvn/version "0.3.3"}
   me.raynes/fs {:mvn/version "1.4.6"}}
 
  :aliases

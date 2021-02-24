@@ -5,6 +5,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [exif-processor.core :as processor]
+            [photobox.db :refer [defschema]]
             [photobox.metadata.core :refer [parse-exif-date]]))
 
 (defn- exif-name->keyword
@@ -43,8 +44,9 @@
   - defining `decode-exif-key` to turn the raw tag name into the desired
     key.
   - defining `decode-exif-value` to transform the raw value, if
-    `:convert` is given."
-  ([tag-name value-spec & {:keys [convert raw-name]}]
+    `:convert` is given.
+  - defining a DB schema with `db/defschema`, if `:schema` is given."
+  ([tag-name value-spec & {:keys [convert raw-name schema]}]
    (let [spec-key# (exif-name->keyword tag-name)
          raw-name# (or raw-name tag-name)]
      `(do
@@ -53,6 +55,8 @@
         ~(when convert
            `(defmethod decode-exif-value ~raw-name# [tag-obj#]
               (~convert (:value tag-obj#))))
+        ~(when schema
+           `(defschema ~spec-key# ~schema))
 
         ~spec-key#))))
 
@@ -70,43 +74,72 @@
                               "1" "Single Point"
                               "256" "Zone"
                               "512" "Wide/Tracking"}
-  :raw-name (unknown 0x1022))
-(def-exif "Date/Time" inst? :convert parse-exif-date)
-(def-exif "Development Dynamic Range" integer? :convert Integer/parseInt)
-(def-exif "Dynamic Range" string?)
-(def-exif "Dynamic Range Setting" string?)
+  :raw-name (unknown 0x1022)
+  :schema {:db/valueType :db.type/string})
+(def-exif "Date/Time" inst? :convert parse-exif-date
+  :schema {:db/valueType :db.type/instant})
+(def-exif "Development Dynamic Range" integer? :convert Integer/parseInt
+  :schema {:db/valueType :db.type/number})
+(def-exif "Dynamic Range" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Dynamic Range Setting" string?
+  :schema {:db/valueType :db.type/string})
 (def-exif "Exposure Count" integer?
-  :raw-name (unknown 0x1032) :convert Integer/parseInt)
-(def-exif "Exposure Mode" string?)
-(def-exif "Exposure Program" string?)
-(def-exif "Exposure Time" string?)  ; e.g. "1/2000 sec"
-(def-exif "F-Number" string?) ; e.g. "f/2.8"
-(def-exif "Focal Length" string?)
-(def-exif "Focal Length 35" string?)
-(def-exif "Focus Mode" string?)
+  :raw-name (unknown 0x1032) :convert Integer/parseInt
+  :schema {:db/valueType :db.type/number})
+(def-exif "Exposure Mode" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Exposure Program" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Exposure Time" string?  ; e.g. "1/2000 sec"
+  :schema {:db/valueType :db.type/string})
+(def-exif "F-Number" string? ; e.g. "f/2.8"
+  :schema {:db/valueType :db.type/string})
+(def-exif "Focal Length" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Focal Length 35" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Focus Mode" string?
+  :schema {:db/valueType :db.type/string})
 (def-exif "Highlight Tone" integer?
-  :raw-name (unknown 0x1041) :convert #(-> % Integer/parseInt - (/ 4)))
+  :raw-name (unknown 0x1041) :convert #(-> % Integer/parseInt - (/ 4))
+  :schema {:db/valueType :db.type/number})
 (def-exif "Image Count" integer? :convert Integer/parseInt
-  :raw-name (unknown 0x1438))
+  :raw-name (unknown 0x1438)
+  :schema {:db/valueType :db.type/number})
 (def-exif-from-map "Image Generation" {"0" "Original Image"
                                        "1" "Re-developed from RAW"}
-  :raw-name (unknown 0x1436))
-(def-exif "ISO Speed Ratings" integer? :convert Integer/parseInt)
-(def-exif "Lens Make" string?)
-(def-exif "Lens Model" string?)
-(def-exif "Make" string? :convert string/trim)
-(def-exif "Model" string? :convert string/trim)
+  :raw-name (unknown 0x1436)
+  :schema {:db/valueType :db.type/string})
+(def-exif "ISO Speed Ratings" integer? :convert Integer/parseInt
+  :schema {:db/valueType :db.type/number})
+(def-exif "Lens Make" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Lens Model" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Make" string? :convert string/trim
+  :schema {:db/valueType :db.type/string})
+(def-exif "Model" string? :convert string/trim
+  :schema {:db/valueType :db.type/string})
 (def-exif "Rating" (s/and integer? #(<= 1 % 5))
-  :raw-name (unknown 0x1431) :convert Integer/parseInt)
-(def-exif "Sequence Number" integer? :convert Integer/parseInt)
+  :raw-name (unknown 0x1431) :convert Integer/parseInt
+  :schema {:db/valueType :db.type/number})
+(def-exif "Sequence Number" integer? :convert Integer/parseInt
+  :schema {:db/valueType :db.type/number})
 (def-exif "Shadow Tone" integer?
-  :raw-name (unknown 0x1040) :convert #(-> % Integer/parseInt - (/ 4)))
-(def-exif "Sharpness" string?)
-(def-exif "Shutter Speed Value" string?)  ; APEX exposure value
+  :raw-name (unknown 0x1040) :convert #(-> % Integer/parseInt - (/ 4))
+  :schema {:db/valueType :db.type/number})
+(def-exif "Sharpness" string?
+  :schema {:db/valueType :db.type/string})
+(def-exif "Shutter Speed Value" string?  ; APEX exposure value
+  :schema {:db/valueType :db.type/string})
 (def-exif-from-map "Shutter Type" {"0" "Mechanical", "1" "Electronic"}
-  :raw-name (unknown 0x1050))
-(def-exif "Software" string? :convert string/trim)  ; camera firmware and version
-(def-exif "Subject Distance Range" string?) ; hypothesis: used to indicate macro mode by GR III
+  :raw-name (unknown 0x1050)
+  :schema {:db/valueType :db.type/string})
+(def-exif "Software" string? :convert string/trim  ; camera firmware and version
+  :schema {:db/valueType :db.type/string})
+(def-exif "Subject Distance Range" string? ; hypothesis: used to indicate macro mode by GR III
+  :schema {:db/valueType :db.type/string})
 
 (defn- decode-tag
   "Decodes a single EXIF tag.  Returns nil for unregistered tags."
