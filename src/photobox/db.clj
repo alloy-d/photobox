@@ -1,4 +1,5 @@
 (ns photobox.db
+  "The DB is a fancy cache of otherwise slow-to-access metadata."
   (:require [datahike.api :as d]
             [photobox.archive :as archive]))
 
@@ -31,9 +32,7 @@
    :db/cardinality :db.cardinality/one})
 
 (def db-config
-  {:store {:backend :mem
-           :id "photobox"}
-   :name "photobox"
+  {:name "photobox"
    :schema-flexibility :write
    :keep-history? true
    :initial-tx [(schema-for ::archive/path)]})
@@ -42,11 +41,17 @@
   (when (not (d/database-exists? db-config))
     (d/create-database db-config)))
 
+(defn- update-schema! [conn]
+  (d/transact conn (full-schema)))
+
 (defn connect
   "Connects to the DB."
   []
   (ensure-db-exists!)
-  (d/connect db-config))
+  (let [conn (d/connect db-config)]
+    ;; FIXME: this feels a little weird.
+    (update-schema! conn)
+    conn))
 
 (defn recreate!
   "Deletes and recreates the DB."

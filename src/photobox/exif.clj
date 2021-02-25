@@ -4,6 +4,7 @@
   Includes some hacked-in special processing for files from the Fujifilm X-T2."
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
+            [taoensso.timbre :as log]
             [exif-processor.core :as processor]
             [photobox.db :refer [defschema]]
             [photobox.metadata.core :refer [parse-exif-date]]))
@@ -157,16 +158,30 @@
        (remove nil?)
        (apply merge)))
 
+;; Occasionally an empty photo gets into to the archive.
+;; Not sure yet how this happens, but I've never seen anything else
+;; cause an error reading EXIF data. Based on that I think it's safe to
+;; log and otherwise ignore these errors.
+(defn with-exif-error-handling [f]
+  (fn [& args]
+    (try
+      (apply f args)
+      (catch java.io.IOException _
+        (log/error "Error producing EXIF data for " args)
+        {}))))
+
 (def exif-for-filename
   "Same as `exif-processor.core/exif-for-filename`,
   but with our very specific postprocessing."
-  (comp postprocess processor/exif-for-filename))
+  (comp postprocess
+        (with-exif-error-handling processor/exif-for-filename)))
 
 (def exif-for-file
   "Same as `exif-processor.core/exif-for-file`,
   but with our very specific postprocessing."
-  (comp postprocess processor/exif-for-file))
+  (comp postprocess
+        (with-exif-error-handling processor/exif-for-file)))
 
 (def available-tags-for-filename
   "Lists Exif data keys available in a file."
-  (comp keys exif-for-filename))
+  (comp keys (with-exif-error-handling exif-for-filename)))
