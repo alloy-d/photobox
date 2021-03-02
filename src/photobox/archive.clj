@@ -5,18 +5,25 @@
   For our purposes, the archive is the ultimate source of truth for most
   data about photos."
   (:require [clojure.spec.alpha :as s]
+            [environ.core :refer [env]]
             [me.raynes.fs :as fs]))
 
 (s/def ::path string?)
 (s/keys ::entry [::path])
 
-;; FIXME: this is ridiculous.
-(def root
-  ({"Linux" {:photo "/mnt/henry/media/Photos"
-             :video "/mnt/henry/media/Videos"}
-    "Mac OS X" {:photo "/Volumes/Multimedia/Photos"
-                :video "/Volumes/Multimedia/Videos"}}
-   (System/getProperty "os.name")))
+(defn root
+  "Returns the archive root when called with no arguments.
+
+  If called with `:photo` or `:video`, returns the appropriate
+  subdirectory for Historical Reasons(TM)."
+
+  ([]
+   (env :photobox-archive-root))
+
+  ([subdir-type]
+   (cond (= subdir-type :photo) (str (root) "/Photos")
+         (= subdir-type :video) (str (root) "/Videos")
+         :else nil)))
 
 (defn absolute-path
   "Produces the absolute path for an archive entry."
