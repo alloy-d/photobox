@@ -1,0 +1,6 @@
+export TAOENSSO_TIMBRE_MIN_LEVEL_EDN=":info"
+
+export PHOTOBOX_ARCHIVE_ROOT="/mnt/henry/media/"
+
+export DATAHIKE_STORE_BACKEND="file"
+export DATAHIKE_STORE_PATH="${PHOTOBOX_ARCHIVE_ROOT}/photobox-db"

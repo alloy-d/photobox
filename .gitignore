@@ -14,3 +14,5 @@ pom.xml.asc
 .nrepl-history
 .clj-kondo
 .cpcache
+
+.envrc
