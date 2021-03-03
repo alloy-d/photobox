@@ -5,6 +5,7 @@
   For our purposes, the archive is the ultimate source of truth for most
   data about photos."
   (:require [clojure.spec.alpha :as s]
+            [clojure.string :as string]
             [environ.core :refer [env]]
             [me.raynes.fs :as fs]))
 
@@ -18,11 +19,16 @@
   subdirectory for Historical Reasons(TM)."
 
   ([]
-   (env :photobox-archive-root))
+   (if-let [archive-root (env :photobox-archive-root)]
+     (let [expanded (-> archive-root fs/expand-home fs/normalized)]
+       (if (string/ends-with? expanded "/")
+         expanded
+         (str expanded "/")))
+     (throw (Exception. ":photobox-archive-root is not set. Try setting $PHOTOBOX_ARCHIVE_ROOT."))))
 
   ([subdir-type]
-   (cond (= subdir-type :photo) (str (root) "/Photos")
-         (= subdir-type :video) (str (root) "/Videos")
+   (cond (= subdir-type :photo) (str (root) "Photos")
+         (= subdir-type :video) (str (root) "Videos")
          :else nil)))
 
 (defn absolute-path
