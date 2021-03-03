@@ -1,12 +1,17 @@
 (ns photobox.runner
-  (:require [photobox.core :as core]
+  (:require [photobox.apple-photos :as apple-photos]
+            [photobox.core :as core]
+            [photobox.db :as db]
             [photobox.execute :as execute]
             [photobox.plan :as plan]
             [clojure.java.io :refer (writer)]
             [clojure.pprint :refer (pprint)]
+            [datahike.api :as d]
             [java-time :as t]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs]
+            [taoensso.timbre :as log]))
 
+;; FIXME: this should move to the archive root or go away.
 (def photobox-dir "~/.photobox.d")
 
 (defn- ensure-directory!
@@ -44,5 +49,20 @@
       (pprint results results-file))
     (pprint (assoc (execute/summarize-execution results)
                    :results-file results-name))))
+
+;; Usage: clojure -X photobox.runner/load-dump :dump all-photos.json
+(defn load-apple-photos-dump
+  "Load a dump from Apple Photos into the Photobox DB."
+  [{:keys [dump]}]
+
+  (log/info "loading dump from" (str dump))
+  (let [data (apple-photos/load-filename (str dump))
+        db-conn (db/connect)]
+    (log/info "data loaded from dump")
+    (log/info "updating database")
+    (d/transact db-conn data)
+    (log/info "database updated")
+    (d/release db-conn))
+  (shutdown-agents))
 
 (defn -main [] (process-photos))
