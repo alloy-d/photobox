@@ -12,7 +12,10 @@
 (defn- get-rating [capture-data]
   ((capture-data :exif-data) :photobox.exif/rating -1))
 (defn- get-date [capture-data]
-  ((capture-data :exif-data) :photobox.exif/date-time))
+  (->> capture-data
+       :exif-data :photobox.exif/date-time
+       t/instant
+       metadata/zonify-date))
 
 (defn archival-path
   "Returns a path with the following directory structure:
@@ -90,11 +93,10 @@
            (throw ex))))
 (defmethod info-for-file :video [{:keys [file]}]
   (let [file-path (.getAbsolutePath file)
-        date-time (metadata/parse-exif-date (video-metadata/date-time-for-filename file-path))]
+        date-time (metadata/exif-date->java-date (video-metadata/date-time-for-filename file-path))]
     {:type :video
      :path file-path
      :exif-data {:photobox.exif/date-time date-time}}))
-
 
 (def processes
   ({"Linux" [{:src "/run/media/awl/disk"

@@ -7,7 +7,7 @@
             [taoensso.timbre :as log]
             [exif-processor.core :as processor]
             [photobox.db :refer [defschema]]
-            [photobox.metadata.core :refer [parse-exif-date]]))
+            [photobox.metadata.core :refer [exif-date->java-date]]))
 
 (defn- exif-name->keyword
   "Converts an exif tag name to a keyword in this namespace."
@@ -77,7 +77,7 @@
                               "512" "Wide/Tracking"}
   :raw-name (unknown 0x1022)
   :schema {:db/valueType :db.type/string})
-(def-exif "Date/Time" inst? :convert parse-exif-date
+(def-exif "Date/Time" inst? :convert exif-date->java-date
   :schema {:db/valueType :db.type/instant})
 (def-exif "Development Dynamic Range" integer? :convert Integer/parseInt
   :schema {:db/valueType :db.type/number})
