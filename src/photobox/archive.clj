@@ -39,3 +39,21 @@
 (def exists?
   "Is this entry really in the archive?"
   (comp fs/exists? absolute-path))
+
+(defn photo-paths
+  "Returns, as strings, the archive-relative paths for all photo files
+  from the archive."
+  []
+
+  (let [base (root :photo)
+        base-components (count (fs/split base))
+        files (fs/find-files*
+                base
+                #(re-matches #".+/\d{4}/\d{4}-\d{2}/\d{4}-\d{2}-\d{2}/\d{8}-[^/]+\.(RAF|JPG|DNG|NEF)$"
+                             (.getPath %)))]
+    (map #(->> %
+              .getPath
+              fs/split
+              (drop base-components)
+              (string/join "/"))
+         files)))
