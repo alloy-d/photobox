@@ -9,6 +9,19 @@
             [photobox.db :refer [defschema]]
             [photobox.metadata.core :refer [exif-date->java-date]]))
 
+(def version
+  "A version number for this EXIF processing.
+
+  Will be used to check if EXIF data has been processed for a photo,
+  and maybe someday to check of EXIF data needs to be reprocessed."
+
+  2)
+
+(s/def ::-version number?)
+(defschema ::-version
+  {:db/valueType :db.type/number
+   :db/cardinality :db.cardinality/one})
+
 (defn- exif-name->keyword
   "Converts an exif tag name to a keyword in this namespace."
   [exif-name]
@@ -23,7 +36,7 @@
   [number]
   (format "Unknown tag (0x%04x)" number))
 
-(s/def ::exif-tag (s/cat :tag string? :value string?))
+(s/def ::exif-tag (s/cat :tag string? :value (s/nilable string?)))
 (s/def ::exif-tag-list (s/coll-of ::exif-tag))
 
 (defmulti decode-exif-key "Produces the keyword key for an exif tag." :tag)
@@ -151,12 +164,13 @@
 (defn- postprocess
   "Decodes the data we want from exif-processor's output."
   [data]
-  (->> data
-       (into [])
-       (s/conform ::exif-tag-list)
-       (map decode-tag)
-       (remove nil?)
-       (apply merge)))
+  (merge {::-version version}
+         (->> data
+              (into [])
+              (s/conform ::exif-tag-list)
+              (map decode-tag)
+              (remove nil?)
+              (apply merge))))
 
 ;; Occasionally an empty photo gets into to the archive.
 ;; Not sure yet how this happens, but I've never seen anything else
