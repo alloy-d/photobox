@@ -10,7 +10,7 @@
   me.raynes/fs {:mvn/version "1.4.6"}}
 
  :aliases
- {:process {:main-opts ["-m" "photobox.runner"]}
+ {:store {:main-opts ["-m" "photobox.run.store"]}
 
   :test {:extra-paths ["test"]
          :extra-deps

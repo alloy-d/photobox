@@ -1,4 +1,4 @@
-(ns photobox.runner
+(ns photobox.run.store
   (:require [photobox.apple-photos :as apple-photos]
             [photobox.core :as core]
             [photobox.db :as db]
