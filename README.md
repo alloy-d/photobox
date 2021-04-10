@@ -64,7 +64,7 @@ fit my workflow better.
 My entry point here is
 
 ```sh
-$ clj -M:process
+$ clojure -M:store
 ```
 
 which does the following (in this order):
@@ -73,7 +73,7 @@ which does the following (in this order):
   to a folder on my desktop named `good photos`.
 - copies any JPEG files I've rated 5 stars to a folder named `great
   photos`.
-- archives all JPEG and RAF files to my NAS device, if it's mounted, in
+- archives all JPEG and raw files to my NAS device, if it's mounted, in
   the same date-based hierarchy that I had configured Lightroom to use.
 
 ## How it works
